@@ -56,7 +56,7 @@ public class ChessboardLogic {
         return immediateAction;
     }
 
-    public void insertPieceToBoard(Piece piece, char file, int chessRow){
+    public void insertPieceToBoard(Piece piece, Piece[][] chessboard,char file, int chessRow){
         int col = fileToCol(file);
         int row = chessRowToRow(chessRow);
 
@@ -91,13 +91,13 @@ public class ChessboardLogic {
         Piece[][] emptyBoard = new Piece[8][8];
         setChessboard(emptyBoard);
 
-        insertPieceToBoard(PieceFactory.createPiece(PieceType.KING,false),'e',1);
-        insertPieceToBoard(PieceFactory.createPiece(PieceType.KING,true),'e',3);
-        insertPieceToBoard(PieceFactory.createPiece(PieceType.KNIGHT,false),'e',4);
-        insertPieceToBoard(PieceFactory.createPiece(PieceType.BISHOP,false),'e',5);
-        insertPieceToBoard(PieceFactory.createPiece(PieceType.QUEEN,true),'d',7);
-        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, true), 'a', 2);
-        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, false), 'a', 7);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.KING, false), this.chessboard, 'e', 1);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.KING, true), this.chessboard, 'e', 3);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.KNIGHT, false), this.chessboard, 'e', 4);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.BISHOP, false), this.chessboard, 'e', 5);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.QUEEN, true), this.chessboard, 'd', 7);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, true), this.chessboard, 'a', 2);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, false), this.chessboard, 'a', 7);
 
 
 
@@ -111,103 +111,108 @@ public class ChessboardLogic {
 
         Piece movingPiece = chessboard[selectedRow][selectedCol];
 
-        int[][] validMoveSet = movingPiece.getValidMoveSet();
+        int[] validMoveSet = movingPiece.getValidMoveSet();
 
         boolean found = false;
 
         for(int i = 0; i < validMoveSet.length; i++){
 
-            int r = validMoveSet[i][0];
-            int c = validMoveSet[i][1];
+            int[] move = decryptMove(validMoveSet[i]);// fromRow, fromCol, toRow, toCol, enPassant, castle, promotion, doublePawnPush
 
-            if (r == selectedToRow && c== selectedToCol){
-                found = true;
+            int toRow = move[2];
+            int toCol = move[3];
+
+            boolean enPassant = move[4] == 1 ;
+            boolean castle = move[5] == 1;
+            int promoType = move[6];
+            boolean promoted = promoType >= 0;
+            boolean doublePawnPush = move[7] == 1;
+
+
+            if (toRow == selectedToRow && toCol == selectedToCol){
+
+                // Castling Execution Logic
+                if (castle) {
+                    int rookOriginalCol = (selectedToCol == 6) ? 7 : 0;
+                    int rookTargetCol = (selectedToCol == 6) ? 5 : 3;
+
+                    Piece rook = chessboard[selectedRow][rookOriginalCol];
+
+                    if (rook.isRook()) {
+
+                        ((Rook) rook).setHasMoved(true);
+                        chessboard[selectedRow][rookTargetCol] = rook;
+                        chessboard[selectedRow][rookOriginalCol] = null;
+                    }
+                }
+
+                //EnPassant Execution Logic
+                if (immediateAction ){
+
+                    if (enPassant){
+                        int dir = movingPiece.isWhite() ? 1 : -1;
+                        chessboard[selectedToRow+dir][selectedToCol] = null;
+                    }
+                    immediateAction = false;
+
+                }
+
+                Pawn.clearAllEnPassantFlags(this);//resetting
+
+                //en passant available setting logic, must be after en passant execution logic
+                if (doublePawnPush){
+                    Piece pieceToTheLeft = null,pieceToTheRight = null;
+
+                    if (isIndexWithinBounds(selectedToRow,selectedToCol-1))
+                        pieceToTheLeft = chessboard[selectedToRow][selectedToCol-1];
+
+                    if (isIndexWithinBounds(selectedToRow,selectedToCol+1))
+                        pieceToTheRight = chessboard[selectedToRow][selectedToCol+1];
+
+                    if ((pieceToTheLeft != null && pieceToTheLeft.isPawn() && pieceToTheLeft.isWhite() != whiteToMove)
+                            || (pieceToTheRight != null && pieceToTheRight.isPawn() && pieceToTheRight.isWhite() != whiteToMove)){
+                        ((Pawn) movingPiece).setEnPassantVulnerable(true);
+                        immediateAction = true;
+                    }
+
+                }
+
+                chessboard[selectedToRow][selectedToCol] = movingPiece;
+                chessboard[selectedRow][selectedCol] = null;
+
+                if(movingPiece.isRook() && !((Rook) movingPiece).getHasMoved()){
+                    ((Rook) movingPiece).setHasMoved(true);
+                }
+
+                if(movingPiece.isKing()){
+
+                    if (!((King) movingPiece).getHasMoved()) {
+                        ((King) movingPiece).setHasMoved(true);
+                    }
+
+                }
+
+                if (movingPiece.isPawn()) {
+
+                    int endRow = movingPiece.isWhite() ? 0 : 7;
+
+                    char file = colToFile(selectedToCol);
+                    int rank = rowToChessRow(endRow);
+
+                    if (selectedToRow == endRow) {
+                        insertPieceToBoard( ((Pawn) movingPiece).promote(this), this.chessboard,file, rank);
+                    }
+
+                }
+
+                setWhiteToMove(!whiteToMove);
+
+                checkGameOver();
+
                 break;
             }
 
         }
-
-        if (!found) return;
-
-        // Castling Execution Logic
-        if (movingPiece.isKing() && Math.abs(selectedCol - selectedToCol) == 2) {
-            int rookOriginalCol = (selectedToCol == 6) ? 7 : 0;
-            int rookTargetCol = (selectedToCol == 6) ? 5 : 3;
-
-            Piece rook = chessboard[selectedRow][rookOriginalCol];
-
-            if (rook.isRook()) {
-
-                ((Rook) rook).setHasMoved(true);
-                chessboard[selectedRow][rookTargetCol] = rook;
-                chessboard[selectedRow][rookOriginalCol] = null;
-            }
-        }
-
-        //EnPassant Execution Logic
-        if (immediateAction && movingPiece.isPawn()){
-
-            if (Math.abs(selectedCol - selectedToCol) == 1 && chessboard[selectedToRow][selectedToCol] == null ){
-                int dir = movingPiece.isWhite() ? 1 : -1;
-                chessboard[selectedToRow+dir][selectedToCol] = null;
-            }
-            immediateAction = false;
-
-        }
-
-        Pawn.clearAllEnPassantFlags(this);//resetting
-
-        //en passant available setting logic, must be after en passant execution logic
-        if (movingPiece.isPawn() && Math.abs(selectedRow-selectedToRow) == 2){
-            Piece pieceToTheLeft = null,pieceToTheRight = null;
-
-            if (isIndexWithinBounds(selectedToRow,selectedToCol-1))
-                pieceToTheLeft = chessboard[selectedToRow][selectedToCol-1];
-
-            if (isIndexWithinBounds(selectedToRow,selectedToCol+1))
-                pieceToTheRight = chessboard[selectedToRow][selectedToCol+1];
-
-
-            if ((pieceToTheLeft != null && pieceToTheLeft.isPawn() && pieceToTheLeft.isWhite() != whiteToMove)
-                    || (pieceToTheRight != null && pieceToTheRight.isPawn() && pieceToTheRight.isWhite() != whiteToMove)){
-                ((Pawn) movingPiece).setEnPassantVulnerable(true);
-                immediateAction = true;
-            }
-
-        }
-
-        chessboard[selectedToRow][selectedToCol] = movingPiece;
-        chessboard[selectedRow][selectedCol] = null;
-
-        if(movingPiece.isRook() && !((Rook) movingPiece).getHasMoved()){
-            ((Rook) movingPiece).setHasMoved(true);
-        }
-
-        if(movingPiece.isKing()){
-
-            if (!((King) movingPiece).getHasMoved()) {
-                ((King) movingPiece).setHasMoved(true);
-            }
-
-        }
-
-        if (movingPiece.isPawn()) {
-
-            int endRow = movingPiece.isWhite() ? 0 : 7;
-
-            char file = colToFile(selectedToCol);
-            int rank = rowToChessRow(endRow);
-
-            if (movingPiece.isWhite() && selectedToRow == endRow) {
-                insertPieceToBoard(((Pawn) movingPiece).promote(this), file, rank);
-            }
-
-        }
-
-        setWhiteToMove(!whiteToMove);
-
-        checkGameOver();
-
     }
 
     //a method to check if a square is attacked by a specified color
@@ -237,7 +242,7 @@ public class ChessboardLogic {
 
                 Piece piece = chessboard[row][col];
 
-                if (piece.isKing() && piece.isWhite() == isWhite){
+                if (piece != null && piece.isKing() && piece.isWhite() == isWhite){
                     return new int[]{row,col};
                 }
 
@@ -268,6 +273,7 @@ public class ChessboardLogic {
         for (PieceType type : order) {
             insertPieceToBoard(
                     PieceFactory.createPiece(type,isWhite),
+                    this.chessboard,
                     file,
                     rank
             );
@@ -279,6 +285,7 @@ public class ChessboardLogic {
         for (char file = 'a'; file <= 'h'; file++) {
             insertPieceToBoard(
                     PieceFactory.createPiece(PieceType.PAWN, isWhite),
+                    this.chessboard,
                     file,
                     rank
             );
@@ -396,7 +403,16 @@ public class ChessboardLogic {
         int enPassant = (move >> 14) & 1;
         int castle = (move >> 15) & 1;
         int promotion = (move >> 16) & 3;
+        int doublePawnPush = (move >> 13) & 1;
 
-        return new int[]{fromRow, fromCol, toRow ,toCol, enPassant, castle, promotion};
+        return new int[]{fromRow, fromCol, toRow ,toCol, enPassant, castle, promotion, doublePawnPush};
+    }
+
+    public static int[] getToSquare(int move){
+        int toSquare = (move >> 6) & 63; //shifting the encrypt right to get the normalised version of the toSquare
+        int toRow = toSquare / 8;
+        int toCol = toSquare % 8;
+
+        return new int[]{toRow,toCol};
     }
 }

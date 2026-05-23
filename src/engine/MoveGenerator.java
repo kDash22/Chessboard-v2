@@ -28,17 +28,14 @@ public class MoveGenerator {
                 if (p.isWhite() != chessboardLogic.isWhiteToMove()) continue;
 
                 p.moveCheck(chessboardLogic, row, col);
-                int[][] pValidMoveSet = p.getValidMoveSet();
-
-                int from = row * 8 + col;
+                int[] pValidMoveSet = p.getValidMoveSet();
 
                 for (int i = 0; i < pValidMoveSet.length; i++) {
                     /*
                         [ flags ][   to   ][  from  ]
                         bits12+   bits6-11    bits0-5
                      */
-                    int to = pValidMoveSet[i][0] * 8 + pValidMoveSet[i][1]; // square = row * 8 + col
-                    moves[++moveCount] = (from) | (to << 6); // add flags if needed
+                    moves[++moveCount] = pValidMoveSet[i]; // add flags if needed
                 }
 
             }
@@ -123,7 +120,7 @@ public class MoveGenerator {
             int rank = rowToChessRow(endRow);
 
             if (movingPiece.isWhite() && toRow == endRow) {
-                chessboardLogic.insertPieceToBoard(((Pawn) movingPiece).promote(chessboardLogic), file, rank);
+               // chessboardLogic.insertPieceToBoard(((Pawn) movingPiece).promote(chessboardLogic), ,file, rank);
             }
         }
 
@@ -193,7 +190,7 @@ public class MoveGenerator {
 
 
 
-
+        return 0 ;
 
     }
 

@@ -250,11 +250,12 @@ public class ChessboardGui extends JPanel {
             }
 
             Piece movingPiece = refBoard[selectedRow][selectedCol] ;
-            int[][] moveSet = movingPiece.getValidMoveSet();
+            int[] moveSet = movingPiece.getValidMoveSet();
 
             for (int i = 0; i < moveSet.length; i++){
 
-                if (row == moveSet[i][0] && col == moveSet[i][1]){
+                int[] toSquare = ChessboardLogic.getToSquare(moveSet[i]);
+                if (row == toSquare[0] && col == toSquare[1]){
 
                     chessboardLogic.movePiece(selectedRow,selectedCol,row,col);
                     break;
@@ -324,22 +325,21 @@ public class ChessboardGui extends JPanel {
         if (!pieceSelected) return;
 
         piece.moveCheck(chessboardLogic,selectedRow,selectedCol);
-        int[][] moveSet = piece.getValidMoveSet();
+        int[] moveSet = piece.getValidMoveSet();
 
-        for (int[] move : moveSet) {
-            int row = move[0];
-            int col = move[1];
+        for (int move : moveSet) {
+            int[] toSquare = ChessboardLogic.getToSquare(move);
 
             // bounds check
-            if (row < 0 || row >= 8 || col < 0 || col >= 8)
+            if (toSquare[0] < 0 || toSquare[0] >= 8 || toSquare[1] < 0 || toSquare[1] >= 8)
                 continue;
-            if (chessboardLogic.getChessboard()[row][col] != null) {
+            if (chessboardLogic.getChessboard()[ toSquare[0] ][ toSquare[1] ] != null) {
                 g2d.setColor(new Color(255, 0, 0, 35));
             } else {
                 g2d.setColor(new Color(0, 255, 0, 35));
             }
 
-            g2d.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            g2d.fillRect(toSquare[1] * TILE_SIZE, toSquare[0] * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
 
     }
@@ -363,8 +363,8 @@ public class ChessboardGui extends JPanel {
 
         javax.swing.SwingUtilities.invokeLater(() -> {
             ChessboardLogic chessboardLogic = new ChessboardLogic();
-            //chessboardLogic.newGame();
-            chessboardLogic.customBoard();
+            chessboardLogic.newGame();
+            //chessboardLogic.customBoard();
             chessboardLogic.getChessboardGui().showGame();
         });
 
