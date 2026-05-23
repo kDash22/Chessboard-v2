@@ -31,6 +31,10 @@ public class ChessboardLogic {
         this.chessboard = board;
     }
 
+    public void setImmediateAction(boolean immediateAction) {
+        this.immediateAction = immediateAction;
+    }
+
     public void setWhiteToMove(boolean whiteToMove) {
         this.whiteToMove = whiteToMove;
     }
@@ -46,6 +50,10 @@ public class ChessboardLogic {
 
     public boolean isWhiteToMove(){
         return whiteToMove;
+    }
+
+    public boolean getImmediateAction(){
+        return immediateAction;
     }
 
     public void insertPieceToBoard(Piece piece, char file, int chessRow){
@@ -105,98 +113,100 @@ public class ChessboardLogic {
 
         int[][] validMoveSet = movingPiece.getValidMoveSet();
 
+        boolean found = false;
+
         for(int i = 0; i < validMoveSet.length; i++){
 
             int r = validMoveSet[i][0];
             int c = validMoveSet[i][1];
 
             if (r == selectedToRow && c== selectedToCol){
-
-                // Castling Execution Logic
-                if (movingPiece instanceof King && Math.abs(selectedCol - selectedToCol) == 2) {
-                    int rookOriginalCol = (selectedToCol == 6) ? 7 : 0;
-                    int rookTargetCol = (selectedToCol == 6) ? 5 : 3;
-
-                    Piece rook = chessboard[selectedRow][rookOriginalCol];
-
-                    if (rook instanceof Rook) {
-
-                        ((Rook) rook).setHasMoved(true);
-                        chessboard[selectedRow][rookTargetCol] = rook;
-                        chessboard[selectedRow][rookOriginalCol] = null;
-                    }
-                }
-
-                //EnPassant Execution Logic
-                if (immediateAction && movingPiece instanceof Pawn pawn){
-
-                    if (Math.abs(selectedCol - selectedToCol) == 1 && chessboard[selectedToRow][selectedToCol] == null ){
-                        int dir = pawn.isWhite() ? 1 : -1;
-                        chessboard[selectedToRow+dir][selectedToCol] = null;
-                    }
-                    immediateAction = false;
-
-                }
-
-                Pawn.clearAllEnPassantFlags(this);//resetting
-
-                //en passant available setting logic, must be after en passant execution logic
-                if (movingPiece instanceof Pawn pawn && Math.abs(selectedRow-selectedToRow) == 2){
-                    Piece pieceToTheLeft = null,pieceToTheRight = null;
-
-                    if (isIndexWithinBounds(selectedToRow,selectedToCol-1))
-                        pieceToTheLeft = chessboard[selectedToRow][selectedToCol-1];
-
-                    if (isIndexWithinBounds(selectedToRow,selectedToCol+1))
-                        pieceToTheRight = chessboard[selectedToRow][selectedToCol+1];
-
-
-                    if ((pieceToTheLeft instanceof Pawn && pieceToTheLeft.isWhite() != whiteToMove)
-                            || (pieceToTheRight instanceof Pawn && pieceToTheRight.isWhite() != whiteToMove)){
-                        pawn.setEnPassantVulnerable(true);
-                        immediateAction = true;
-                    }
-
-                }
-
-                chessboard[selectedToRow][selectedToCol] = movingPiece;
-                chessboard[selectedRow][selectedCol] = null;
-                setWhiteToMove(!whiteToMove);
-
-                checkGameOver();
-
+                found = true;
+                break;
             }
 
         }
 
-        if(movingPiece instanceof Rook rook && !rook.getHasMoved()){
-                rook.setHasMoved(true);
+        if (!found) return;
+
+        // Castling Execution Logic
+        if (movingPiece.isKing() && Math.abs(selectedCol - selectedToCol) == 2) {
+            int rookOriginalCol = (selectedToCol == 6) ? 7 : 0;
+            int rookTargetCol = (selectedToCol == 6) ? 5 : 3;
+
+            Piece rook = chessboard[selectedRow][rookOriginalCol];
+
+            if (rook.isRook()) {
+
+                ((Rook) rook).setHasMoved(true);
+                chessboard[selectedRow][rookTargetCol] = rook;
+                chessboard[selectedRow][rookOriginalCol] = null;
+            }
         }
 
-        if(movingPiece instanceof King king ){
+        //EnPassant Execution Logic
+        if (immediateAction && movingPiece.isPawn()){
 
-            if (!king.getHasMoved()) {
-                king.setHasMoved(true);
+            if (Math.abs(selectedCol - selectedToCol) == 1 && chessboard[selectedToRow][selectedToCol] == null ){
+                int dir = movingPiece.isWhite() ? 1 : -1;
+                chessboard[selectedToRow+dir][selectedToCol] = null;
+            }
+            immediateAction = false;
+
+        }
+
+        Pawn.clearAllEnPassantFlags(this);//resetting
+
+        //en passant available setting logic, must be after en passant execution logic
+        if (movingPiece.isPawn() && Math.abs(selectedRow-selectedToRow) == 2){
+            Piece pieceToTheLeft = null,pieceToTheRight = null;
+
+            if (isIndexWithinBounds(selectedToRow,selectedToCol-1))
+                pieceToTheLeft = chessboard[selectedToRow][selectedToCol-1];
+
+            if (isIndexWithinBounds(selectedToRow,selectedToCol+1))
+                pieceToTheRight = chessboard[selectedToRow][selectedToCol+1];
+
+
+            if ((pieceToTheLeft != null && pieceToTheLeft.isPawn() && pieceToTheLeft.isWhite() != whiteToMove)
+                    || (pieceToTheRight != null && pieceToTheRight.isPawn() && pieceToTheRight.isWhite() != whiteToMove)){
+                ((Pawn) movingPiece).setEnPassantVulnerable(true);
+                immediateAction = true;
             }
 
         }
 
-        if (movingPiece instanceof Pawn pawn) {
+        chessboard[selectedToRow][selectedToCol] = movingPiece;
+        chessboard[selectedRow][selectedCol] = null;
 
-            int endRow = pawn.isWhite() ? 0 : 7;
+        if(movingPiece.isRook() && !((Rook) movingPiece).getHasMoved()){
+            ((Rook) movingPiece).setHasMoved(true);
+        }
+
+        if(movingPiece.isKing()){
+
+            if (!((King) movingPiece).getHasMoved()) {
+                ((King) movingPiece).setHasMoved(true);
+            }
+
+        }
+
+        if (movingPiece.isPawn()) {
+
+            int endRow = movingPiece.isWhite() ? 0 : 7;
 
             char file = colToFile(selectedToCol);
             int rank = rowToChessRow(endRow);
-            
-            if (pawn.isWhite() && selectedToRow == endRow) {
-                insertPieceToBoard(pawn.promote(this), file, rank);
-            } else if (!pawn.isWhite() && selectedToRow == endRow) {
-                insertPieceToBoard(pawn.promote(this), file, rank);
+
+            if (movingPiece.isWhite() && selectedToRow == endRow) {
+                insertPieceToBoard(((Pawn) movingPiece).promote(this), file, rank);
             }
-            
+
         }
 
+        setWhiteToMove(!whiteToMove);
 
+        checkGameOver();
 
     }
 
@@ -227,7 +237,7 @@ public class ChessboardLogic {
 
                 Piece piece = chessboard[row][col];
 
-                if (piece instanceof King king && king.isWhite() == isWhite){
+                if (piece.isKing() && piece.isWhite() == isWhite){
                     return new int[]{row,col};
                 }
 

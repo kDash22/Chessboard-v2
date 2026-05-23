@@ -82,13 +82,13 @@ public class Pawn extends Piece{
         if (ChessboardLogic.isIndexWithinBounds(fromRow,fromCol-1))
             pieceToTheLeft = refBoard[fromRow][fromCol-1];
 
-        if (ChessboardLogic.isIndexWithinBounds(fromRow,fromCol+1))
-            pieceToTheRight = refBoard[fromRow][fromCol+1];
-
         if (pieceToTheLeft instanceof Pawn pawnToTheLeft && pawnToTheLeft.getEnPassantVulnerable() && isWhite() != pawnToTheLeft.isWhite()){
             int dir = isWhite() ? -1 : 1;
             moveSet.add(new int[]{fromRow+dir,fromCol-1});
         }
+
+        if (ChessboardLogic.isIndexWithinBounds(fromRow,fromCol+1))
+            pieceToTheRight = refBoard[fromRow][fromCol+1];
 
         if (pieceToTheRight instanceof Pawn pawnToTheRight && pawnToTheRight.getEnPassantVulnerable() && isWhite() != pawnToTheRight.isWhite()){
             int dir = isWhite() ? -1 : 1;

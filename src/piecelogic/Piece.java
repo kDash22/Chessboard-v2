@@ -43,6 +43,14 @@ public abstract class Piece {
         return getPieceType() == PieceType.KING;
     }
 
+    public boolean isPawn(){
+        return getPieceType() == PieceType.PAWN;
+    }
+
+    public boolean isRook(){
+        return getPieceType() == PieceType.ROOK;
+    }
+
     public void filterIllegalMoves(ChessboardLogic chessboardLogic, List<int[]> moveSet, int fromRow, int fromCol){
 
         Piece[][] refBoard;
@@ -56,7 +64,7 @@ public abstract class Piece {
             refBoard[ square[0] ][ square[1] ] = refBoard[fromRow][fromCol];
             refBoard[fromRow][fromCol] = null;
 
-            if (this instanceof King && Math.abs(fromCol - square[1]) == 2){
+            if (this.isKing() && Math.abs(fromCol - square[1]) == 2){
                 //handle castling move for king
 
                 int rookFromCol = (square[1] == 6) ? 7 : 0;
