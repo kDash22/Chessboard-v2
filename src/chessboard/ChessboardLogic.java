@@ -368,4 +368,35 @@ public class ChessboardLogic {
         }
         return 8 - row;
     }
+
+    //a method used to decrypt the int move
+    public static int[] decryptMove(int move){
+
+        int fromSquare = move & 63;
+        int fromRow = fromSquare / 8;
+        int fromCol = fromSquare % 8;
+
+        int toSquare = (move >> 6) & 63; //shifting the encrypt right to get the normalised version of the toSquare
+        int toRow = toSquare / 8;
+        int toCol = toSquare % 8;
+
+            /*
+                    [ flags ][   to   ][  from  ]
+                    bits12+   bits6-11    bits0-5
+                */
+            /*
+                    bit  12     → capture
+                    bit  13    → double pawn push
+                    bit  14     → en passant
+                    bit  15    → castling
+
+                    bits 16 (2 bits total)   → promotion piece type
+                */
+
+        int enPassant = (move >> 14) & 1;
+        int castle = (move >> 15) & 1;
+        int promotion = (move >> 16) & 3;
+
+        return new int[]{fromRow, fromCol, toRow ,toCol, enPassant, castle, promotion};
+    }
 }

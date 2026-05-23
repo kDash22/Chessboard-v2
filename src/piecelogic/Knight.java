@@ -2,6 +2,10 @@ package piecelogic;
 
 import chessboard.ChessboardLogic;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
 public class Knight extends Piece {
 
     public static final int PIECE_VALUE = 3;
@@ -14,6 +18,8 @@ public class Knight extends Piece {
     public void moveCheck(ChessboardLogic chessboardLogic, int fromRow, int fromCol) {
         moveSet.clear();//clear the list to remove earlier move
 
+        List<Integer> moves = new ArrayList<>();
+
         if (isWhite() != chessboardLogic.isWhiteToMove()){
             validMoveSet = new int[0][2];
             return;
@@ -25,23 +31,45 @@ public class Knight extends Piece {
         int[][] directions = {{2,1},{1,2},{-1,2},{-2,1},{-2,-1},{-1,-2},{1,-2},{2,-1}};
 
         for (int i = 0; i < 8; i++){
-                int toRow = fromRow + directions[i][0];
-                int toCol = fromCol + directions[i][1];
+            /*
+                    [ flags ][   to   ][  from  ]
+                    bits12+   bits6-11    bits0-5
+                */
+            /*
+                    bit  0     → capture
+                    bit  1     → double pawn push
+                    bit  2     → en passant
+                    bit  3     → castling
 
-                if( ChessboardLogic.isIndexWithinBounds(toRow,toCol) ){
+                    bits 4-5   → promotion piece type
+                */
 
-                    if (refBoard[toRow][toCol] == null){
-                        moveSet.add(new int[]{toRow, toCol});
+            int toRow = fromRow + directions[i][0];
+            int toCol = fromCol + directions[i][1];
 
-                    } else if (refBoard[toRow][toCol].isWhite() != isWhite() && refBoard[toRow][toCol].isKing()) {
-                        break;
+            int move = fromRow * 8 + fromCol;
+            int flags = 0 ;
 
-                    } else if(refBoard[toRow][toCol].isWhite() != isWhite()) {
-                        moveSet.add(new int[]{toRow, toCol});
+            move |= (toRow * 8 + toCol) << 6;
 
-                    }
+            if( ChessboardLogic.isIndexWithinBounds(toRow,toCol) ){
+
+                if (refBoard[toRow][toCol] == null){
+                    moveSet.add(new int[]{toRow, toCol});
+                    moves.add(move);
+
+                } else if (refBoard[toRow][toCol].isWhite() != isWhite() && refBoard[toRow][toCol].isKing()) {
+                    break;
+
+                } else if(refBoard[toRow][toCol].isWhite() != isWhite()) {
+                    moveSet.add(new int[]{toRow, toCol});
+                    move |= 1 << 12;
+                    moves.add(move);
+
 
                 }
+
+            }
 
         }
 

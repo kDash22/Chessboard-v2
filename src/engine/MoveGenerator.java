@@ -142,15 +142,55 @@ public class MoveGenerator {
 
 
 
-    public void categoriseMove(Piece[][] refBoard, Piece p,int fromRow, int fromCol,int toRow, int toCol){
+    public int applyFlags(Piece[][] refBoard, Piece p,int fromRow, int fromCol,int toRow, int toCol){
 
+        /*
+            bit  0     → capture
+            bit  1     → double pawn push
+            bit  2     → en passant
+            bit  3     → castling
+
+            bits 4-5   → promotion piece type
+         */
+        int flag = 0;
         if (refBoard[toRow][toCol] != null){
             //capture
+            flag |= 1;
         }
 
         if (p.isKing() && Math.abs(fromCol - toCol) == 2){
             //castle
+            flag |= 1 << 3;
         }
+
+        if (p.isPawn()){
+
+            if (Math.abs(fromRow - toRow) == 2){
+                //en passant vulnerable
+                flag |= 1 << 1;
+
+            }
+
+            if (Math.abs(fromCol - toCol) == 1 && refBoard[toRow][toCol] == null){
+                //en passant happened
+                flag |= 1 << 2;
+
+            }
+
+            int endRow = p.isWhite() ? 0 : 7;
+            if (endRow == toRow){
+                //promotion
+                //flag
+
+            }
+
+        }
+
+
+
+
+
+
 
 
 

@@ -3,6 +3,7 @@ package piecelogic;
 import chessboard.ChessboardLogic;
 
 import static global.Global.shallowCopyBoard;
+import static chessboard.ChessboardLogic.decryptMove;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,22 +52,32 @@ public abstract class Piece {
         return getPieceType() == PieceType.ROOK;
     }
 
-    public void filterIllegalMoves(ChessboardLogic chessboardLogic, List<int[]> moveSet, int fromRow, int fromCol){
+    public void filterIllegalMoves(ChessboardLogic chessboardLogic, int[] moves){
 
         Piece[][] refBoard;
 
-        for (int i = moveSet.size()-1 ; i >= 0; i--){
+        for (int i = moves.length - 1; i >= 0; i--){
+
+            int[] move = decryptMove(moves[i]);// fromRow, fromCol, toRow, toCol, enPassant, castle, promotion
+
+            int fromRow = move[0];
+            int fromCol = move[1];
+
+            int toRow = move[2];
+            int toCol = move[3];
+
+            boolean enPassant = move[4] == 1 ;
+            boolean castle = move[5] == 1;
+            boolean promoted = move[6] > 0;
+            
 
             refBoard = shallowCopyBoard(chessboardLogic.getChessboard());
-
-            int[] square = moveSet.get(i);
 
             refBoard[ square[0] ][ square[1] ] = refBoard[fromRow][fromCol];
             refBoard[fromRow][fromCol] = null;
 
             if (this.isKing() && Math.abs(fromCol - square[1]) == 2){
                 //handle castling move for king
-
                 int rookFromCol = (square[1] == 6) ? 7 : 0;
                 int rookToCol = (square[1] == 6) ? 5 : 3;
 
