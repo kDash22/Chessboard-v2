@@ -96,7 +96,7 @@ public class King extends Piece{
         if (!getHasMoved()  && !chessboardLogic.isKingInCheck(isWhite(),refBoard)  ) {
             // King Side Castling
             if (refBoard[fromRow][7] != null && refBoard[fromRow][7].getPieceType() == PieceType.ROOK
-                    && refBoard[fromRow][7].isWhite() &&!((Rook) refBoard[fromRow][7]).getHasMoved()) {
+                    && refBoard[fromRow][7].isWhite() == isWhite() &&!((Rook) refBoard[fromRow][7]).getHasMoved()) {
 
                 if ( (refBoard[fromRow][5] == null && refBoard[fromRow  ][6] == null)
                         && !chessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,5)
@@ -110,7 +110,7 @@ public class King extends Piece{
             }
             // Queen Side Castling
             if (refBoard[fromRow][0] != null && refBoard[fromRow][0].getPieceType() == PieceType.ROOK
-                    && refBoard[fromRow][0].isWhite() && !((Rook) refBoard[fromRow][0]).getHasMoved()) {
+                    && refBoard[fromRow][0].isWhite() == isWhite() && !((Rook) refBoard[fromRow][0]).getHasMoved()) {
                 
                 if (refBoard[fromRow][1] == null && refBoard[fromRow][2] == null && refBoard[fromRow][3] == null
                         && !chessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,2)

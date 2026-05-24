@@ -137,12 +137,13 @@ public class ChessboardLogic {
                     int rookTargetCol = (selectedToCol == 6) ? 5 : 3;
 
                     Piece rook = chessboard[selectedRow][rookOriginalCol];
+                    if (rook != null) {
+                        if (rook.isRook()) {
 
-                    if (rook.isRook()) {
-
-                        ((Rook) rook).setHasMoved(true);
-                        chessboard[selectedRow][rookTargetCol] = rook;
-                        chessboard[selectedRow][rookOriginalCol] = null;
+                            ((Rook) rook).setHasMoved(true);
+                            chessboard[selectedRow][rookTargetCol] = rook;
+                            chessboard[selectedRow][rookOriginalCol] = null;
+                        }
                     }
                 }
 

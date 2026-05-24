@@ -58,7 +58,7 @@ public class Pawn extends Piece{
                     for (int i = 1; i < 5; i++){
                         int promotion = fromRow * 8 + fromCol;
                         promotion |= (tempMoves[0][0] * 8 + tempMoves[0][1]) << 6;
-                        promotion |= i << 16; //bits 16 (2 bits total) → promotion piece type
+                        promotion |= i << 16; //bits 16 (3 bits total) → promotion piece type
                         moves.add(promotion);
                     }
                 } else {

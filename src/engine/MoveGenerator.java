@@ -157,6 +157,7 @@ public class MoveGenerator {
                     case 2 -> newPiece = PieceFactory.createPiece(PieceType.BISHOP, movingPiece.isWhite());
                     case 3 -> newPiece = PieceFactory.createPiece(PieceType.ROOK, movingPiece.isWhite());
                     case 4 -> newPiece = PieceFactory.createPiece(PieceType.QUEEN, movingPiece.isWhite());
+                    default -> throw new IllegalArgumentException("Invalid promotion type: " + promoType+" in doMove() !");
                 }
 
                 char file = colToFile(toCol);
@@ -169,7 +170,7 @@ public class MoveGenerator {
         chessboardLogic.setWhiteToMove(!chessboardLogic.isWhiteToMove());
 
         //chessboardLogic.checkGameOver();
-        if (movingPiece.isPawn())
+        if (movingPiece.isPawn() && promoted)
             return new MoveState(movingPiece,capturedPiece,previousEPPawn,(Pawn) movingPiece,movingPieceHadMoved,castledRookHadMoved,prevImmediateActionState);
         else
             return new MoveState(movingPiece,capturedPiece,previousEPPawn,null,movingPieceHadMoved,castledRookHadMoved,prevImmediateActionState);
