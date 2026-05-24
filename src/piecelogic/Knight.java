@@ -12,10 +12,10 @@ public class Knight extends Piece {
 
     @Override
     public void moveCheck(ChessboardLogic chessboardLogic, int fromRow, int fromCol) {
-        moveSet.clear();//clear the list to remove earlier move
+        moves.clear();//clear the List to remove earlier moves
 
         if (isWhite() != chessboardLogic.isWhiteToMove()){
-            validMoveSet = new int[0][2];
+            validMoveSet = new int[0];
             return;
         }
 
@@ -25,33 +25,47 @@ public class Knight extends Piece {
         int[][] directions = {{2,1},{1,2},{-1,2},{-2,1},{-2,-1},{-1,-2},{1,-2},{2,-1}};
 
         for (int i = 0; i < 8; i++){
-                int toRow = fromRow + directions[i][0];
-                int toCol = fromCol + directions[i][1];
+            /*
+                    [ flags ][   to   ][  from  ]
+                    bits12+   bits6-11    bits0-5
 
-                if( ChessboardLogic.isIndexWithinBounds(toRow,toCol) ){
+                    bit  12 → capture
+                    bit  13 → double pawn push
+                    bit  14 → en passant
+                    bit  15 → castling
 
-                    if (refBoard[toRow][toCol] == null){
-                        moveSet.add(new int[]{toRow, toCol});
+                    bit 16 (3 bits total) → promotion piece type
+                */
 
-                    } else if (refBoard[toRow][toCol].isWhite() != isWhite() && refBoard[toRow][toCol].isKing()) {
-                        break;
+            int toRow = fromRow + directions[i][0];
+            int toCol = fromCol + directions[i][1];
 
-                    } else if(refBoard[toRow][toCol].isWhite() != isWhite()) {
-                        moveSet.add(new int[]{toRow, toCol});
+            int move = fromRow * 8 + fromCol;
 
-                    }
+            move |= (toRow * 8 + toCol) << 6;
+
+            if( ChessboardLogic.isIndexWithinBounds(toRow,toCol) ){
+
+                if (refBoard[toRow][toCol] == null){
+                    moves.add(move);
+
+                } else if(refBoard[toRow][toCol].isWhite() != isWhite() && !refBoard[toRow][toCol].isKing()) {
+                    move |= 1 << 12;
+                    moves.add(move);
 
                 }
 
+            }
+
         }
 
-        filterIllegalMoves(chessboardLogic,moveSet, fromRow, fromCol);
+        filterIllegalMoves(chessboardLogic,moves);
 
-        int validMoveCount = moveSet.size();
-        validMoveSet = new int[validMoveCount][2];
+        int validMoveCount = moves.size();
+        validMoveSet = new int[validMoveCount];
 
         for (int i = 0; i < validMoveCount; i++){
-            validMoveSet[i] = moveSet.get(i);
+            validMoveSet[i] = moves.get(i);
         }
 
     }

@@ -1,9 +1,6 @@
 package piecelogic;
 
 import chessboard.ChessboardLogic;
-import static global.Global.shallowCopyBoard;
-
-import java.util.List;
 
 import javax.swing.JOptionPane;
 
@@ -19,14 +16,15 @@ public class Pawn extends Piece{
 
     @Override
     public void moveCheck(ChessboardLogic chessboardLogic, int fromRow, int fromCol) {
-        moveSet.clear();//clear the list to remove earlier move
+        moves.clear();//clear the list to remove earlier move
 
         if (isWhite() != chessboardLogic.isWhiteToMove()){
-            validMoveSet = new int[0][2];
+            validMoveSet = new int[0];
             return;
         }
 
         Piece[][] refBoard = chessboardLogic.getChessboard();
+        int endRow = isWhite() ? 0 : 7;
 
         //there are 4 general moves for a pawn
         // move 1 square forward, move 2 squares forward (only as the first move), take diagonally to the left and right
@@ -38,16 +36,45 @@ public class Pawn extends Piece{
             tempMoves = new int[][]{{fromRow+ 1, fromCol}, {fromRow+2, fromCol}, {fromRow+1, fromCol+1}, {fromRow+1,fromCol -1}};
         }
 
+        /*
+                    [ flags ][   to   ][  from  ]
+                    bits12+   bits6-11    bits0-5
+
+                    bit  12 → capture
+                    bit  13 → double pawn push
+                    bit  14 → en passant
+                    bit  15 → castling
+
+                    bit 16 (3 bits total) → promotion piece type
+                */
+
         //moving logic
         if ( ChessboardLogic.isIndexWithinBounds( tempMoves[0][0],tempMoves[0][1] ) ){
 
             if (refBoard[tempMoves[0][0]][tempMoves[0][1]] == null) {//1 square check
-                moveSet.add(tempMoves[0]);
+
+                //promotion
+                if (tempMoves[0][0] == endRow) {
+                    for (int i = 1; i < 5; i++){
+                        int promotion = fromRow * 8 + fromCol;
+                        promotion |= (tempMoves[0][0] * 8 + tempMoves[0][1]) << 6;
+                        promotion |= i << 16; //bits 16 (3 bits total) → promotion piece type
+                        moves.add(promotion);
+                    }
+                } else {
+                    int move = fromRow * 8 + fromCol;
+                    move |= (tempMoves[0][0] * 8 + tempMoves[0][1]) << 6;
+                    moves.add(move);
+                }
 
                 if (ChessboardLogic.isIndexWithinBounds( tempMoves[1][0],tempMoves[1][1] )){
 
-                    if (refBoard[tempMoves[1][0]][tempMoves[1][1]] == null && !getHasMoved(fromRow)) //2 square check
-                        moveSet.add(tempMoves[1]);
+                    if (refBoard[tempMoves[1][0]][tempMoves[1][1]] == null && !getHasMoved(fromRow)){ //2 square check
+                        int doublePush = fromRow * 8 + fromCol;
+                        doublePush |= (tempMoves[1][0] * 8 + tempMoves[1][1]) << 6;
+                        doublePush |= 1 << 13;
+                        moves.add(doublePush);
+                    }
                 }
             }
         }
@@ -60,7 +87,21 @@ public class Pawn extends Piece{
                     && refBoard[toRow][toCol].isWhite() != isWhite()
                     && !refBoard[toRow][toCol].isKing())
             {
-                moveSet.add(tempMoves[2]);
+                int move = fromRow * 8 + fromCol;
+                move |= (toRow * 8 + toCol) << 6;
+                move |= 1 << 12; //bit 12 → capture
+
+                if (toRow == endRow) {
+                    for (int i = 1; i < 5; i++){
+                        int promotion = fromRow * 8 + fromCol;
+                        promotion |= (toRow * 8 + toCol) << 6;
+                        promotion |= 1 << 12; //bit 12 → capture
+                        promotion |= i << 16; //bits 16 (2 bits total) → promotion piece type
+                        moves.add(promotion);
+                    }
+                } else {
+                    moves.add(move);
+                }
             }
         }
 
@@ -72,7 +113,21 @@ public class Pawn extends Piece{
                     && refBoard[toRow][toCol].isWhite() != isWhite()
                     && !refBoard[toRow][toCol].isKing())
             {
-                moveSet.add(tempMoves[3]);
+                int move = fromRow * 8 + fromCol;
+                move |= (toRow * 8 + toCol) << 6;
+                move |= 1 << 12; //bit 12 → capture
+
+                if (toRow == endRow) {
+                    for (int i = 1; i < 5; i++){
+                        int promotion = fromRow * 8 + fromCol;
+                        promotion |= (toRow * 8 + toCol) << 6;
+                        promotion |= 1 << 12; //bit 12 → capture
+                        promotion |= i << 16; //bits 16 (3 bits total) → promotion piece type
+                        moves.add(promotion);
+                    }
+                } else {
+                    moves.add(move);
+                }
             }
         }
 
@@ -82,27 +137,35 @@ public class Pawn extends Piece{
         if (ChessboardLogic.isIndexWithinBounds(fromRow,fromCol-1))
             pieceToTheLeft = refBoard[fromRow][fromCol-1];
 
+        if (pieceToTheLeft != null && pieceToTheLeft.isPawn()
+                && ((Pawn) pieceToTheLeft).getEnPassantVulnerable() && isWhite() != pieceToTheLeft.isWhite()){
+            int dir = isWhite() ? -1 : 1;
+            int move = fromRow * 8 + fromCol;
+            move |= ((fromRow+dir) * 8 + (fromCol-1)) << 6;
+            move |= 1 << 14; //bit 14 → en passant
+            moves.add(move);
+        }
+
         if (ChessboardLogic.isIndexWithinBounds(fromRow,fromCol+1))
             pieceToTheRight = refBoard[fromRow][fromCol+1];
 
-        if (pieceToTheLeft instanceof Pawn pawnToTheLeft && pawnToTheLeft.getEnPassantVulnerable() && isWhite() != pawnToTheLeft.isWhite()){
+        if (pieceToTheRight != null && pieceToTheRight.isPawn()
+                && ((Pawn) pieceToTheRight).getEnPassantVulnerable() && isWhite() != pieceToTheRight.isWhite()){
             int dir = isWhite() ? -1 : 1;
-            moveSet.add(new int[]{fromRow+dir,fromCol-1});
-        }
-
-        if (pieceToTheRight instanceof Pawn pawnToTheRight && pawnToTheRight.getEnPassantVulnerable() && isWhite() != pawnToTheRight.isWhite()){
-            int dir = isWhite() ? -1 : 1;
-            moveSet.add(new int[]{fromRow+dir,fromCol+1});
+            int move = fromRow * 8 + fromCol;
+            move |= ((fromRow+dir) * 8 + (fromCol+1)) << 6;
+            move |= 1 << 14; //bit 14 → en passant
+            moves.add(move);
         }
         //en passant logic over
 
-        filterIllegalMoves(chessboardLogic,moveSet, fromRow, fromCol);
+        filterIllegalMoves(chessboardLogic,moves);
 
-        int validMoveCount = moveSet.size();
-        validMoveSet = new int[validMoveCount][2];
+        int validMoveCount = moves.size();
+        validMoveSet = new int[validMoveCount];
 
         for (int i = 0; i < validMoveCount; i++){
-            validMoveSet[i] = moveSet.get(i);
+            validMoveSet[i] = moves.get(i);
         }
     }
 
@@ -113,63 +176,6 @@ public class Pawn extends Piece{
 
         return (targetRow == pieceRow+rowDir
                 && (targetCol == pieceCol - 1 || targetCol == pieceCol + 1)) ;
-
-    }
-
-    public static void clearAllEnPassantFlags(ChessboardLogic chessboardLogic){
-
-        Piece[][] refBoard = chessboardLogic.getChessboard();
-
-        for (int r = 0; r < 8; r++){
-            for (int c = 0; c < 8; c++){
-
-                Piece p = refBoard[r][c];
-
-                if (p instanceof Pawn pawn){
-                    pawn.setEnPassantVulnerable(false);
-                }
-            }
-        }
-    }
-
-    @Override
-    public void filterIllegalMoves(ChessboardLogic chessboardLogic, List<int[]> moveSet, int fromRow, int fromCol){
-
-        Piece[][] refBoard;
-
-        for (int i = moveSet.size()-1 ; i >= 0; i--){
-
-            refBoard = shallowCopyBoard(chessboardLogic.getChessboard());
-
-            int[] square = moveSet.get(i);
-
-            Piece captured;
-
-            if (Math.abs(fromCol - square[1]) == 1){
-                    if (refBoard[ square[0] ][ square[1] ] == null ) {
-                        
-                    int dir = isWhite() ? 1 : -1;
-                    captured = refBoard[square[0]+dir][square[1]] ;
-
-                    if (!(captured instanceof Pawn)){
-                        throw new IllegalArgumentException("The captured Piece using EnPassant is not a Pawn at filterIllegalMoves in Pawn ! ");
-                    }
-
-                    refBoard[square[0]+dir][square[1]] = null;
-
-                } else {
-                    captured = refBoard[ square[0] ][ square[1] ];
-                }
-            }
-
-            refBoard[ square[0] ][ square[1] ] = refBoard[fromRow][fromCol];
-            refBoard[fromRow][fromCol] = null;
-
-            if ( chessboardLogic.isKingInCheck(isWhite(),refBoard) ){
-                moveSet.remove(i);
-            }
-
-        }
 
     }
 

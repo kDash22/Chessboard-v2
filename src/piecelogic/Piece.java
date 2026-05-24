@@ -1,16 +1,18 @@
 package piecelogic;
 
 import chessboard.ChessboardLogic;
+import engine.MoveState;
 
-import static global.Global.shallowCopyBoard;
+import static engine.MoveGenerator.doMove;
+import static engine.MoveGenerator.undoMove;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Piece {
 
-    List<int[]> moveSet = new ArrayList<>();
-    protected int[][] validMoveSet;
+    protected List<Integer> moves = new ArrayList<>();
+    protected int[] validMoveSet;
 
     private boolean isWhite;
     private PieceType pieceType;
@@ -23,11 +25,11 @@ public abstract class Piece {
 
     }
 
-    public List<int[]> getPseudoLegalMoves() {
-        return moveSet;
+    public List<Integer> getPseudoLegalMoves() {
+        return moves;
     }
 
-    public int[][] getValidMoveSet() {
+    public int[] getValidMoveSet() {
         return validMoveSet;
     }
 
@@ -43,33 +45,27 @@ public abstract class Piece {
         return getPieceType() == PieceType.KING;
     }
 
-    public void filterIllegalMoves(ChessboardLogic chessboardLogic, List<int[]> moveSet, int fromRow, int fromCol){
+    public boolean isPawn(){
+        return getPieceType() == PieceType.PAWN;
+    }
 
-        Piece[][] refBoard;
+    public boolean isRook(){
+        return getPieceType() == PieceType.ROOK;
+    }
 
-        for (int i = moveSet.size()-1 ; i >= 0; i--){
+    public void filterIllegalMoves(ChessboardLogic chessboardLogic, List<Integer> moves){
 
-            refBoard = shallowCopyBoard(chessboardLogic.getChessboard());
+        for (int i = moves.size() - 1; i >= 0; i--){
 
-            int[] square = moveSet.get(i);
+            int encryptedMove = moves.get(i);
+            MoveState moveState = doMove(chessboardLogic,encryptedMove);
 
-            refBoard[ square[0] ][ square[1] ] = refBoard[fromRow][fromCol];
-            refBoard[fromRow][fromCol] = null;
-
-            if (this instanceof King && Math.abs(fromCol - square[1]) == 2){
-                //handle castling move for king
-
-                int rookFromCol = (square[1] == 6) ? 7 : 0;
-                int rookToCol = (square[1] == 6) ? 5 : 3;
-
-                refBoard[square[0]][rookToCol] = refBoard[square[0]][rookFromCol];
-                refBoard[square[0]][rookFromCol] = null;
+            if ( chessboardLogic.isKingInCheck(isWhite(), chessboardLogic.getChessboard()) ){
+                undoMove(chessboardLogic,encryptedMove,moveState);
+                moves.remove(i);
+                continue;
             }
-
-
-            if ( chessboardLogic.isKingInCheck(isWhite(),refBoard) ){
-                moveSet.remove(i);
-            }
+            undoMove(chessboardLogic,encryptedMove,moveState);
 
         }
 

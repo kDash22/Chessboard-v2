@@ -14,10 +14,10 @@ public class Rook extends Piece{
 
     @Override
     public void moveCheck(ChessboardLogic chessboardLogic, int fromRow, int fromCol) {
-        moveSet.clear();//clear the list to remove earlier move
+        moves.clear();//clear the list to remove earlier move
 
         if (isWhite() != chessboardLogic.isWhiteToMove()){
-            validMoveSet = new int[0][2];
+            validMoveSet = new int[0];
             return;
         }
 
@@ -27,19 +27,34 @@ public class Rook extends Piece{
         int[][] directions = {{1,0},{0,1},{-1,0},{0,-1}};
 
         for (int[] direction : directions){
+            /*
+                    [ flags ][   to   ][  from  ]
+                    bits12+   bits6-11    bits0-5
+
+                    bit  12 → capture
+                    bit  13 → double pawn push
+                    bit  14 → en passant
+                    bit  15 → castling
+
+                    bit 16 (3 bits total) → promotion piece type
+                */
+
             int toRow = fromRow + direction[0];
             int toCol = fromCol + direction[1];
 
             while( ChessboardLogic.isIndexWithinBounds(toRow,toCol) ){
 
-                if (refBoard[toRow][toCol] == null){
-                    moveSet.add(new int[]{toRow, toCol});
+                int move = fromRow * 8 + fromCol;
+                move |= (toRow * 8 + toCol) << 6;
 
-                } else if (refBoard[toRow][toCol].isWhite() != isWhite() && refBoard[toRow][toCol].isKing()) {
+                if (refBoard[toRow][toCol] == null){
+                    moves.add(move);
+
+                } else if(refBoard[toRow][toCol].isWhite() != isWhite() && !refBoard[toRow][toCol].isKing()) {
+                    move |= 1 << 12;
+                    moves.add(move);
                     break;
-                } else if(refBoard[toRow][toCol].isWhite() != isWhite()) {
-                    moveSet.add(new int[]{toRow, toCol});
-                    break;
+
                 } else {
                     break;
                 }
@@ -49,13 +64,13 @@ public class Rook extends Piece{
             }
         }
 
-        filterIllegalMoves(chessboardLogic,moveSet, fromRow, fromCol);
+        filterIllegalMoves(chessboardLogic,moves);
 
-        int validMoveCount = moveSet.size();
-        validMoveSet = new int[validMoveCount][2];
+        int validMoveCount = moves.size();
+        validMoveSet = new int[validMoveCount];
 
         for (int i = 0; i < validMoveCount; i++){
-            validMoveSet[i] = moveSet.get(i);
+            validMoveSet[i] = moves.get(i);
         }
     }
 

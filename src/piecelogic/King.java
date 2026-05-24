@@ -1,6 +1,7 @@
 package piecelogic;
 
 import chessboard.ChessboardLogic;
+import static chessboard.ChessboardLogic.getToSquare;
 
 public class King extends Piece{
 
@@ -12,10 +13,10 @@ public class King extends Piece{
 
     @Override
     public void moveCheck(ChessboardLogic chessboardLogic, int fromRow, int fromCol) {
-        moveSet.clear();//clear the list to remove earlier move
+        moves.clear();//clear the list to remove earlier move
 
         if (isWhite() != chessboardLogic.isWhiteToMove()){
-            validMoveSet = new int[0][2];
+            validMoveSet = new int[0];
             return;
         }
 
@@ -26,16 +27,33 @@ public class King extends Piece{
 
         for (int[] direction : directions){
 
+            /*
+                    [ flags ][   to   ][  from  ]
+                    bits12+   bits6-11    bits0-5
+
+                    bit  12 → capture
+                    bit  13 → double pawn push
+                    bit  14 → en passant
+                    bit  15 → castling
+
+                    bit 16 (3 bits total) → promotion piece type
+                */
+
             int toRow = fromRow + direction[0];
             int toCol = fromCol + direction[1];
+
+            int move = fromRow * 8 + fromCol;
+
+            move |= (toRow * 8 + toCol) << 6;
 
             if (ChessboardLogic.isIndexWithinBounds(toRow,toCol)){
                 if (refBoard[toRow][toCol] == null) {
                     // Empty square
-                    moveSet.add(new int[]{toRow,toCol});
-                } else if (refBoard[toRow][toCol].isWhite() != isWhite()) {
+                    moves.add(move);
+                } else if (refBoard[toRow][toCol].isWhite() != isWhite() && !refBoard[toRow][toCol].isKing()) {
                     // Enemy piece
-                    moveSet.add(new int[]{toRow,toCol});
+                    move |= 1 << 12;
+                    moves.add(move);
                 }
             }
 
@@ -44,9 +62,10 @@ public class King extends Piece{
 
         // King Proximity Rule
         // Check if adjacent squares contain an enemy King
-        for (int i = moveSet.size() - 1; i >= 0; i--){
+        for (int i = moves.size() - 1; i >= 0; i--){
 
-            int[] move = moveSet.get(i);
+            int move = moves.get(i);
+            int[] toSquare = getToSquare(move);
             boolean remove = false;
 
             for (int dr = -1; dr <= 1 && !remove; dr++) {
@@ -57,12 +76,12 @@ public class King extends Piece{
                         continue;
                     }
 
-                    int adjRow = move[0] + dr;
-                    int adjCol = move[1] + dc;
+                    int adjRow = toSquare[0] + dr;
+                    int adjCol = toSquare[1] + dc;
 
                     if (ChessboardLogic.isIndexWithinBounds(adjRow, adjCol)) {
                         Piece adjPiece = refBoard[adjRow][adjCol];
-                        if (adjPiece instanceof King && adjPiece.isWhite() != isWhite()) {
+                        if (adjPiece != null && adjPiece.isKing() && adjPiece.isWhite() != isWhite()) {
                             remove = true;
                             break;
                         }
@@ -71,39 +90,45 @@ public class King extends Piece{
                 }
 
             }
-            if (remove) moveSet.remove(i);
+            if (remove) moves.remove(i);
         }
         // --- Castling Logic ---
         if (!getHasMoved()  && !chessboardLogic.isKingInCheck(isWhite(),refBoard)  ) {
             // King Side Castling
-            if (refBoard[fromRow][7] instanceof Rook rook && !rook.getHasMoved()) {
+            if (refBoard[fromRow][7] != null && refBoard[fromRow][7].getPieceType() == PieceType.ROOK
+                    && refBoard[fromRow][7].isWhite() == isWhite() &&!((Rook) refBoard[fromRow][7]).getHasMoved()) {
 
                 if ( (refBoard[fromRow][5] == null && refBoard[fromRow  ][6] == null)
                         && !chessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,5)
                         && !chessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,6))  {
-                    moveSet.add(new int[] {fromRow, 6});
+
+                    int move = fromRow * 8 + fromCol;
+                    move |= (fromRow * 8 + 6) << 6;
+                    move |= 1 << 15; //bit  15    → castling
+                    moves.add(move);
                 }
             }
             // Queen Side Castling
-            if (refBoard[fromRow][0] instanceof Rook rook && !rook.getHasMoved()) {
+            if (refBoard[fromRow][0] != null && refBoard[fromRow][0].getPieceType() == PieceType.ROOK
+                    && refBoard[fromRow][0].isWhite() == isWhite() && !((Rook) refBoard[fromRow][0]).getHasMoved()) {
                 
                 if (refBoard[fromRow][1] == null && refBoard[fromRow][2] == null && refBoard[fromRow][3] == null
                         && !chessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,2)
                         && !chessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,3)) {
-                    moveSet.add(new int[] {fromRow, 2});
+                    int move = fromRow * 8 + fromCol;
+                    move |= (fromRow * 8 + 2) << 6;
+                    move |= 1 << 15; //bit  15    → castling
+                    moves.add(move);
                 }
             }
         }
+        filterIllegalMoves(chessboardLogic,moves);
 
-        filterIllegalMoves(chessboardLogic,moveSet, fromRow, fromCol);
-
-        //implement checks
-
-        int validMoveCount = moveSet.size();
-        validMoveSet = new int[validMoveCount][2];
+        int validMoveCount = moves.size();
+        validMoveSet = new int[validMoveCount];
 
         for (int i = 0; i < validMoveCount; i++){
-            validMoveSet[i] = moveSet.get(i);
+            validMoveSet[i] = moves.get(i);
         }
     }
 
