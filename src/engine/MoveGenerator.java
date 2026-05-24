@@ -229,7 +229,7 @@ public class MoveGenerator {
         if (moveState.previousEPPawn != null) {
             moveState.previousEPPawn.setEnPassantVulnerable(true);
         }
-        
+
         if (promoted) {
 
             int endRow = movedPiece.isWhite() ? 0 : 7;

@@ -67,7 +67,7 @@ public class ChessboardLogic {
         //System.out.println("piece inserted into the board ! ");
     }
 
-    public void newGame(){
+    public void newGame(ChessboardGui chessboardGui){
 
         chessboardGui.setChessboardLogic(this);
         setWhiteToMove(true);
@@ -87,7 +87,7 @@ public class ChessboardLogic {
     }
 
     //for testing purposes
-    public void customBoard(){
+    public void customBoard(ChessboardGui chessboardGui){
         chessboardGui.setChessboardLogic(this);
         setWhiteToMove(true);
 
@@ -115,8 +115,6 @@ public class ChessboardLogic {
         Piece movingPiece = chessboard[selectedRow][selectedCol];
 
         int[] validMoveSet = movingPiece.getValidMoveSet();
-
-        boolean found = false;
 
         for(int i = 0; i < validMoveSet.length; i++){
 
@@ -155,9 +153,21 @@ public class ChessboardLogic {
                     if (isIndexWithinBounds(toRow+dir,toCol)) {
                         if (enPassant)
                             chessboard[selectedToRow + dir][selectedToCol] = null;
+                    }
 
-                        if (chessboard[selectedToRow + dir][selectedToCol] != null && chessboard[selectedToRow + dir][selectedToCol].isPawn())
-                            ((Pawn) chessboard[selectedToRow + dir][selectedToCol]).setEnPassantVulnerable(false);
+                    Pawn enpassantVulnerablePawn = null;
+                    for (int r = 0; r < 8; r++) {
+                        for (int c = 0; c < 8; c++) {
+                            if (chessboard[r][c] instanceof Pawn pawn && pawn.getEnPassantVulnerable()) {
+                                enpassantVulnerablePawn = pawn;
+                                pawn.setEnPassantVulnerable(false);
+                                r = 8; break; // Optimization: Only 1 pawn can be vulnerable, break early
+                            }
+                        }
+                    }
+                    if (enpassantVulnerablePawn != null){
+                        enpassantVulnerablePawn.setEnPassantVulnerable(false);
+
                     }
                     immediateAction = false;
                 }
