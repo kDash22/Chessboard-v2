@@ -2,11 +2,6 @@ package piecelogic;
 
 import chessboard.ChessboardLogic;
 
-import static chessboard.ChessboardLogic.*;
-import static global.Global.shallowCopyBoard;
-
-import java.util.List;
-
 import javax.swing.JOptionPane;
 
 public class Pawn extends Piece{
@@ -66,6 +61,7 @@ public class Pawn extends Piece{
                 if (tempMoves[0][0] == endRow) {
                     for (int i = 1; i < 5; i++){
                         int promotion = fromRow * 8 + fromCol;
+                        promotion |= (tempMoves[0][0] * 8 + tempMoves[0][1]) << 6;
                         promotion |= i << 16; //bits 16 (2 bits total) → promotion piece type
                         moves.add(promotion);
                     }
@@ -98,6 +94,7 @@ public class Pawn extends Piece{
                 if (toRow == endRow) {
                     for (int i = 1; i < 5; i++){
                         int promotion = fromRow * 8 + fromCol;
+                        promotion |= (toRow * 8 + toCol) << 6;
                         promotion |= i << 16; //bits 16 (2 bits total) → promotion piece type
                         moves.add(promotion);
                     }
@@ -122,6 +119,7 @@ public class Pawn extends Piece{
                 if (toRow == endRow) {
                     for (int i = 1; i < 5; i++){
                         int promotion = fromRow * 8 + fromCol;
+                        promotion |= (toRow * 8 + toCol) << 6;
                         promotion |= i << 16; //bits 16 (2 bits total) → promotion piece type
                         moves.add(promotion);
                     }

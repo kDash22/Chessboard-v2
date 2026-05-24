@@ -9,8 +9,6 @@ import static chessboard.ChessboardLogic.*;
 
 public class MoveGenerator {
 
-    boolean originalTurnState;
-
     public MoveList generateMoves(ChessboardLogic chessboardLogic) {
         int[] moves = new int[256]; //maximum moves for any given turn is estimated to be about 218
         Piece[][] refBoard = chessboardLogic.getChessboard();
@@ -45,6 +43,9 @@ public class MoveGenerator {
     public static MoveState doMove(ChessboardLogic chessboardLogic, int encryptedMove) {
 
         Piece[][] refBoard = chessboardLogic.getChessboard();
+        boolean prevImmediateActionState = chessboardLogic.getImmediateAction();
+
+        chessboardLogic.setImmediateAction(false);//resetting
 
         Pawn previousEPPawn = null;
         for (int r = 0; r < 8; r++) {
@@ -88,7 +89,7 @@ public class MoveGenerator {
             Piece rook = refBoard[fromRow][rookOriginalCol];
 
             if (rook.isRook()) {
-
+                castledRookHadMoved = ((Rook) rook).getHasMoved();
                 ((Rook) rook).setHasMoved(true);
                 refBoard[fromRow][rookTargetCol] = rook;
                 refBoard[fromRow][rookOriginalCol] = null;
@@ -107,7 +108,7 @@ public class MoveGenerator {
                 ((Pawn)refBoard[toRow+dir][toCol]).setEnPassantVulnerable(false);
         }
 
-        chessboardLogic.setImmediateAction(false);//resetting
+        //chessboardLogic.setImmediateAction(false);//resetting
 
         //en passant available setting logic, must be after en passant execution logic
         if (doublePawnPush) {
@@ -118,7 +119,6 @@ public class MoveGenerator {
 
             if (isIndexWithinBounds(toRow, toCol + 1))
                 pieceToTheRight = refBoard[toRow][toCol + 1];
-
 
             if ((pieceToTheLeft != null && pieceToTheLeft.isPawn() && pieceToTheLeft.isWhite() != chessboardLogic.isWhiteToMove())
                     || (pieceToTheRight != null && pieceToTheRight.isPawn() && pieceToTheRight.isWhite() != chessboardLogic.isWhiteToMove())){
@@ -170,9 +170,9 @@ public class MoveGenerator {
 
         //chessboardLogic.checkGameOver();
         if (movingPiece.isPawn())
-            return new MoveState(movingPiece,capturedPiece,previousEPPawn,(Pawn) movingPiece,movingPieceHadMoved,castledRookHadMoved);
+            return new MoveState(movingPiece,capturedPiece,previousEPPawn,(Pawn) movingPiece,movingPieceHadMoved,castledRookHadMoved,prevImmediateActionState);
         else
-            return new MoveState(movingPiece,capturedPiece,previousEPPawn,null,movingPieceHadMoved,castledRookHadMoved);
+            return new MoveState(movingPiece,capturedPiece,previousEPPawn,null,movingPieceHadMoved,castledRookHadMoved,prevImmediateActionState);
 
     }
 
@@ -222,12 +222,10 @@ public class MoveGenerator {
                 refBoard[toRow + dir][toCol] = capturedPiece;
             }
         }
-        chessboardLogic.setImmediateAction(true);//resetting
 
         //en passant available unsetting logic, must be after en passant undo logic
         if (doublePawnPush) {
             ((Pawn) movedPiece).setEnPassantVulnerable(false);
-            chessboardLogic.setImmediateAction(false);
         }
 
         if (moveState.previousEPPawn != null) {
@@ -286,6 +284,7 @@ public class MoveGenerator {
 
         }
 
+        chessboardLogic.setImmediateAction(moveState.prevImmediateActionState);
         chessboardLogic.setWhiteToMove(!chessboardLogic.isWhiteToMove());
     }
 

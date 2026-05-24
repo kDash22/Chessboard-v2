@@ -2,12 +2,6 @@ package piecelogic;
 
 import chessboard.ChessboardLogic;
 
-import static global.Global.clear1D;
-
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-
 public class Knight extends Piece {
 
     public static final int PIECE_VALUE = 3;

@@ -409,7 +409,7 @@ public class ChessboardLogic {
 
         int enPassant = (move >> 14) & 1;
         int castle = (move >> 15) & 1;
-        int promotion = (move >> 16) & 3;
+        int promotion = (move >> 16) & 4;
         int doublePawnPush = (move >> 13) & 1;
 
         return new int[]{fromRow, fromCol, toRow ,toCol, enPassant, castle, promotion, doublePawnPush};

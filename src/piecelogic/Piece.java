@@ -3,8 +3,6 @@ package piecelogic;
 import chessboard.ChessboardLogic;
 import engine.MoveState;
 
-import static global.Global.shallowCopyBoard;
-import static chessboard.ChessboardLogic.decryptMove;
 import static engine.MoveGenerator.doMove;
 import static engine.MoveGenerator.undoMove;
 

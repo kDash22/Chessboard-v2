@@ -38,14 +38,7 @@ public class ChessboardGui extends JPanel {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e){
-
-                if (chessboardLogic.hasNoLegalMoves()){
-                    return; //disable mouse function
-                }
-
                 selectPiece(e);
-
-
 
             }
         });
@@ -373,7 +366,6 @@ public class ChessboardGui extends JPanel {
             chessboardLogic.getChessboardGui().showGame();
             MoveGenerator.runPerftUpToDepth(chessboardLogic,5);
         });
-
 
 
         /*
