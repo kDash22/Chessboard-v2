@@ -397,19 +397,18 @@ public class ChessboardLogic {
             /*
                     [ flags ][   to   ][  from  ]
                     bits12+   bits6-11    bits0-5
-                */
-            /*
-                    bit  12     → capture
-                    bit  13    → double pawn push
-                    bit  14     → en passant
-                    bit  15    → castling
 
-                    bits 16 (2 bits total)   → promotion piece type
+                    bit  12 → capture
+                    bit  13 → double pawn push
+                    bit  14 → en passant
+                    bit  15 → castling
+
+                    bit 16 (3 bits total) → promotion piece type
                 */
 
         int enPassant = (move >> 14) & 1;
         int castle = (move >> 15) & 1;
-        int promotion = (move >> 16) & 4;
+        int promotion = (move >> 16) & 7;// binary 111
         int doublePawnPush = (move >> 13) & 1;
 
         return new int[]{fromRow, fromCol, toRow ,toCol, enPassant, castle, promotion, doublePawnPush};

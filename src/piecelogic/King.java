@@ -30,14 +30,13 @@ public class King extends Piece{
             /*
                     [ flags ][   to   ][  from  ]
                     bits12+   bits6-11    bits0-5
-                */
-            /*
-                    bit  12     → capture
-                    bit  13    → double pawn push
-                    bit  14     → en passant
-                    bit  15    → castling
 
-                    bits 16 (2 bits total)   → promotion piece type
+                    bit  12 → capture
+                    bit  13 → double pawn push
+                    bit  14 → en passant
+                    bit  15 → castling
+
+                    bit 16 (3 bits total) → promotion piece type
                 */
 
             int toRow = fromRow + direction[0];

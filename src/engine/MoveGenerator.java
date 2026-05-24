@@ -104,8 +104,6 @@ public class MoveGenerator {
                 capturedPiece = refBoard[toRow+dir][toCol];
                 refBoard[toRow+dir][toCol] = null;
             }
-            if (refBoard[toRow+dir][toCol] != null && refBoard[toRow+dir][toCol].isPawn())
-                ((Pawn)refBoard[toRow+dir][toCol]).setEnPassantVulnerable(false);
         }
 
         //chessboardLogic.setImmediateAction(false);//resetting
@@ -231,24 +229,7 @@ public class MoveGenerator {
         if (moveState.previousEPPawn != null) {
             moveState.previousEPPawn.setEnPassantVulnerable(true);
         }
-        /*
-        if (doublePawnPush) {
-            Piece pieceToTheLeft = null, pieceToTheRight = null;
-
-            if (isIndexWithinBounds(toRow, toCol - 1))
-                pieceToTheLeft = refBoard[toRow][toCol - 1];
-
-            if (isIndexWithinBounds(toRow, toCol + 1))
-                pieceToTheRight = refBoard[toRow][toCol + 1];
-
-
-            if ((pieceToTheLeft != null && pieceToTheLeft.isPawn() && pieceToTheLeft.isWhite() != chessboardLogic.isWhiteToMove())
-                    || (pieceToTheRight != null && pieceToTheRight.isPawn() && pieceToTheRight.isWhite() != chessboardLogic.isWhiteToMove())){
-                ((Pawn) movedPiece).setEnPassantVulnerable(false);
-            }
-            chessboardLogic.setImmediateAction(false);
-        }
-         */
+        
         if (promoted) {
 
             int endRow = movedPiece.isWhite() ? 0 : 7;
