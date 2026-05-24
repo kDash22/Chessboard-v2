@@ -50,9 +50,9 @@ public class MoveGenerator {
         Pawn previousEPPawn = null;
         for (int r = 0; r < 8; r++) {
             for (int c = 0; c < 8; c++) {
-                if (refBoard[r][c] instanceof Pawn pawn && pawn.getEnPassantVulnerable()) {
-                    previousEPPawn = pawn;
-                    pawn.setEnPassantVulnerable(false);
+                if (refBoard[r][c] != null && refBoard[r][c].isPawn() && ((Pawn) refBoard[r][c]).getEnPassantVulnerable()) {
+                    previousEPPawn = ((Pawn) refBoard[r][c]);
+                    previousEPPawn.setEnPassantVulnerable(false);
                     r = 8; break; // Optimization: Only 1 pawn can be vulnerable, break early
                 }
             }
@@ -88,11 +88,13 @@ public class MoveGenerator {
 
             Piece rook = refBoard[fromRow][rookOriginalCol];
 
-            if (rook.isRook()) {
-                castledRookHadMoved = ((Rook) rook).getHasMoved();
-                ((Rook) rook).setHasMoved(true);
-                refBoard[fromRow][rookTargetCol] = rook;
-                refBoard[fromRow][rookOriginalCol] = null;
+            if (rook != null){
+                if (rook.isRook()) {
+                    castledRookHadMoved = ((Rook) rook).getHasMoved();
+                    ((Rook) rook).setHasMoved(true);
+                    refBoard[fromRow][rookTargetCol] = rook;
+                    refBoard[fromRow][rookOriginalCol] = null;
+                }
             }
         }
 
@@ -203,12 +205,13 @@ public class MoveGenerator {
             int rookTargetCol = (toCol == 6) ? 5 : 3;
 
             Piece rook = refBoard[fromRow][rookTargetCol];
+            if (rook != null){
+                if (rook.isRook()) {
 
-            if (rook.isRook()) {
-
-                ((Rook) rook).setHasMoved(moveState.castledRookHadMoved);
-                refBoard[fromRow][rookOriginalCol] = rook;
-                refBoard[fromRow][rookTargetCol] = null;
+                    ((Rook) rook).setHasMoved(moveState.castledRookHadMoved);
+                    refBoard[fromRow][rookOriginalCol] = rook;
+                    refBoard[fromRow][rookTargetCol] = null;
+                }
             }
         }
 

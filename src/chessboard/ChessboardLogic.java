@@ -63,7 +63,7 @@ public class ChessboardLogic {
         int col = fileToCol(file);
         int row = chessRowToRow(chessRow);
 
-        this.chessboard[row][col] = piece;
+        chessboard[row][col] = piece;
         //System.out.println("piece inserted into the board ! ");
     }
 
@@ -155,19 +155,14 @@ public class ChessboardLogic {
                             chessboard[selectedToRow + dir][selectedToCol] = null;
                     }
 
-                    Pawn enpassantVulnerablePawn = null;
                     for (int r = 0; r < 8; r++) {
                         for (int c = 0; c < 8; c++) {
-                            if (chessboard[r][c] instanceof Pawn pawn && pawn.getEnPassantVulnerable()) {
-                                enpassantVulnerablePawn = pawn;
-                                pawn.setEnPassantVulnerable(false);
+                            if (chessboard[r][c] != null && chessboard[r][c].isPawn() && ((Pawn) chessboard[r][c]).getEnPassantVulnerable()) {
+                                Pawn enpassantVulnerablePawn = ((Pawn) chessboard[r][c]);
+                                enpassantVulnerablePawn.setEnPassantVulnerable(false);
                                 r = 8; break; // Optimization: Only 1 pawn can be vulnerable, break early
                             }
                         }
-                    }
-                    if (enpassantVulnerablePawn != null){
-                        enpassantVulnerablePawn.setEnPassantVulnerable(false);
-
                     }
                     immediateAction = false;
                 }

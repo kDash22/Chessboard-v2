@@ -50,7 +50,7 @@ public class King extends Piece{
                 if (refBoard[toRow][toCol] == null) {
                     // Empty square
                     moves.add(move);
-                } else if (refBoard[toRow][toCol].isWhite() != isWhite()) {
+                } else if (refBoard[toRow][toCol].isWhite() != isWhite() && !refBoard[toRow][toCol].isKing()) {
                     // Enemy piece
                     move |= 1 << 12;
                     moves.add(move);
@@ -81,7 +81,7 @@ public class King extends Piece{
 
                     if (ChessboardLogic.isIndexWithinBounds(adjRow, adjCol)) {
                         Piece adjPiece = refBoard[adjRow][adjCol];
-                        if (adjPiece instanceof King && adjPiece.isWhite() != isWhite()) {
+                        if (adjPiece != null && adjPiece.isKing() && adjPiece.isWhite() != isWhite()) {
                             remove = true;
                             break;
                         }
@@ -95,7 +95,8 @@ public class King extends Piece{
         // --- Castling Logic ---
         if (!getHasMoved()  && !chessboardLogic.isKingInCheck(isWhite(),refBoard)  ) {
             // King Side Castling
-            if (refBoard[fromRow][7] instanceof Rook rook && !rook.getHasMoved()) {
+            if (refBoard[fromRow][7] != null && refBoard[fromRow][7].getPieceType() == PieceType.ROOK
+                    && refBoard[fromRow][7].isWhite() &&!((Rook) refBoard[fromRow][7]).getHasMoved()) {
 
                 if ( (refBoard[fromRow][5] == null && refBoard[fromRow  ][6] == null)
                         && !chessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,5)
@@ -108,7 +109,8 @@ public class King extends Piece{
                 }
             }
             // Queen Side Castling
-            if (refBoard[fromRow][0] instanceof Rook rook && !rook.getHasMoved()) {
+            if (refBoard[fromRow][0] != null && refBoard[fromRow][0].getPieceType() == PieceType.ROOK
+                    && refBoard[fromRow][0].isWhite() && !((Rook) refBoard[fromRow][0]).getHasMoved()) {
                 
                 if (refBoard[fromRow][1] == null && refBoard[fromRow][2] == null && refBoard[fromRow][3] == null
                         && !chessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,2)

@@ -95,6 +95,7 @@ public class Pawn extends Piece{
                     for (int i = 1; i < 5; i++){
                         int promotion = fromRow * 8 + fromCol;
                         promotion |= (toRow * 8 + toCol) << 6;
+                        promotion |= 1 << 12; //bit 12 → capture
                         promotion |= i << 16; //bits 16 (2 bits total) → promotion piece type
                         moves.add(promotion);
                     }
@@ -120,6 +121,7 @@ public class Pawn extends Piece{
                     for (int i = 1; i < 5; i++){
                         int promotion = fromRow * 8 + fromCol;
                         promotion |= (toRow * 8 + toCol) << 6;
+                        promotion |= 1 << 12; //bit 12 → capture
                         promotion |= i << 16; //bits 16 (3 bits total) → promotion piece type
                         moves.add(promotion);
                     }
@@ -147,7 +149,8 @@ public class Pawn extends Piece{
         if (ChessboardLogic.isIndexWithinBounds(fromRow,fromCol+1))
             pieceToTheRight = refBoard[fromRow][fromCol+1];
 
-        if (pieceToTheRight instanceof Pawn pawnToTheRight && pawnToTheRight.getEnPassantVulnerable() && isWhite() != pawnToTheRight.isWhite()){
+        if (pieceToTheRight != null && pieceToTheRight.isPawn()
+                && ((Pawn) pieceToTheRight).getEnPassantVulnerable() && isWhite() != pieceToTheRight.isWhite()){
             int dir = isWhite() ? -1 : 1;
             int move = fromRow * 8 + fromCol;
             move |= ((fromRow+dir) * 8 + (fromCol+1)) << 6;

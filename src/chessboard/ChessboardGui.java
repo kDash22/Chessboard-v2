@@ -364,7 +364,7 @@ public class ChessboardGui extends JPanel {
             chessboardLogic.newGame(chessboardGui);
             //chessboardLogic.customBoard(chessboardGui);
             chessboardLogic.getChessboardGui().showGame();
-            MoveGenerator.runPerftUpToDepth(chessboardLogic,5);
+            MoveGenerator.runPerftUpToDepth(chessboardLogic,6);
         });
 
 
