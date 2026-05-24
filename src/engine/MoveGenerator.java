@@ -46,6 +46,17 @@ public class MoveGenerator {
 
         Piece[][] refBoard = chessboardLogic.getChessboard();
 
+        Pawn previousEPPawn = null;
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                if (refBoard[r][c] instanceof Pawn pawn && pawn.getEnPassantVulnerable()) {
+                    previousEPPawn = pawn;
+                    pawn.setEnPassantVulnerable(false);
+                    r = 8; break; // Optimization: Only 1 pawn can be vulnerable, break early
+                }
+            }
+        }
+
         int[] move = decryptMove(encryptedMove);// fromRow, fromCol, toRow, toCol, enPassant, castle, promotion, doublePawnPush
 
         int fromRow = move[0];
@@ -159,9 +170,9 @@ public class MoveGenerator {
 
         //chessboardLogic.checkGameOver();
         if (movingPiece.isPawn())
-            return new MoveState(movingPiece,capturedPiece,movingPiece,movingPieceHadMoved,castledRookHadMoved);
+            return new MoveState(movingPiece,capturedPiece,previousEPPawn,(Pawn) movingPiece,movingPieceHadMoved,castledRookHadMoved);
         else
-            return new MoveState(movingPiece,capturedPiece,null,movingPieceHadMoved,castledRookHadMoved);
+            return new MoveState(movingPiece,capturedPiece,previousEPPawn,null,movingPieceHadMoved,castledRookHadMoved);
 
     }
 
@@ -215,6 +226,15 @@ public class MoveGenerator {
 
         //en passant available unsetting logic, must be after en passant undo logic
         if (doublePawnPush) {
+            ((Pawn) movedPiece).setEnPassantVulnerable(false);
+            chessboardLogic.setImmediateAction(false);
+        }
+
+        if (moveState.previousEPPawn != null) {
+            moveState.previousEPPawn.setEnPassantVulnerable(true);
+        }
+        /*
+        if (doublePawnPush) {
             Piece pieceToTheLeft = null, pieceToTheRight = null;
 
             if (isIndexWithinBounds(toRow, toCol - 1))
@@ -230,7 +250,7 @@ public class MoveGenerator {
             }
             chessboardLogic.setImmediateAction(false);
         }
-
+         */
         if (promoted) {
 
             int endRow = movedPiece.isWhite() ? 0 : 7;
