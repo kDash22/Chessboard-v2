@@ -103,7 +103,7 @@ public class King extends Piece{
                         && !chessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,6))  {
 
                     int move = fromRow * 8 + fromCol;
-                    move |= (fromRow * 8 + 6) << 12;
+                    move |= (fromRow * 8 + 6) << 6;
                     move |= 1 << 15; //bit  15    → castling
                     moves.add(move);
                 }
@@ -115,7 +115,7 @@ public class King extends Piece{
                         && !chessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,2)
                         && !chessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,3)) {
                     int move = fromRow * 8 + fromCol;
-                    move |= (fromRow * 8 + 2) << 12;
+                    move |= (fromRow * 8 + 2) << 6;
                     move |= 1 << 15; //bit  15    → castling
                     moves.add(move);
                 }

@@ -20,7 +20,6 @@ public class ChessboardLogic {
 
     public ChessboardLogic(){
         System.out.println("chessboardLogic obj created ! ");
-        chessboardGui = new ChessboardGui();
         whiteToMove = true;
     }
     //setters
@@ -29,6 +28,10 @@ public class ChessboardLogic {
             throw new IllegalArgumentException("Board size is not 8 x 8 ! : "+board.length+" x "+board[0].length);
         }
         this.chessboard = board;
+    }
+
+    public void setGui(ChessboardGui chessboardGui){
+        this.chessboardGui = chessboardGui;
     }
 
     public void setImmediateAction(boolean immediateAction) {
@@ -125,7 +128,6 @@ public class ChessboardLogic {
             boolean enPassant = move[4] == 1 ;
             boolean castle = move[5] == 1;
             int promoType = move[6];
-            boolean promoted = promoType >= 0;
             boolean doublePawnPush = move[7] == 1;
 
 
@@ -149,15 +151,16 @@ public class ChessboardLogic {
                 //EnPassant Execution Logic
                 if (immediateAction ){
 
-                    if (enPassant){
-                        int dir = movingPiece.isWhite() ? 1 : -1;
-                        chessboard[selectedToRow+dir][selectedToCol] = null;
+                    int dir = movingPiece.isWhite() ? 1 : -1;
+                    if (isIndexWithinBounds(toRow+dir,toCol)) {
+                        if (enPassant)
+                            chessboard[selectedToRow + dir][selectedToCol] = null;
+
+                        if (chessboard[selectedToRow + dir][selectedToCol] != null && chessboard[selectedToRow + dir][selectedToCol].isPawn())
+                            ((Pawn) chessboard[selectedToRow + dir][selectedToCol]).setEnPassantVulnerable(false);
                     }
                     immediateAction = false;
-
                 }
-
-                Pawn.clearAllEnPassantFlags(this);//resetting
 
                 //en passant available setting logic, must be after en passant execution logic
                 if (doublePawnPush){
@@ -325,7 +328,11 @@ public class ChessboardLogic {
     }
 
     public void checkGameOver(){
-        if (hasNoLegalMoves()) {
+        boolean savedImmediateAction = immediateAction;
+        boolean hasNoMoves = hasNoLegalMoves();
+        immediateAction = savedImmediateAction;
+
+        if (hasNoMoves) {
 
             Piece[][] chessboard = getChessboard();
             boolean turn = isWhiteToMove();

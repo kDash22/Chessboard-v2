@@ -13,6 +13,7 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.*;
 
+import engine.MoveGenerator;
 import piecelogic.*;
 
 public class ChessboardGui extends JPanel {
@@ -361,15 +362,19 @@ public class ChessboardGui extends JPanel {
 
     public static void main(String[] args){
 
+        ChessboardLogic chessboardLogic = new ChessboardLogic();
+
+
         javax.swing.SwingUtilities.invokeLater(() -> {
-            ChessboardLogic chessboardLogic = new ChessboardLogic();
+            ChessboardGui chessboardGui = new ChessboardGui();
+            chessboardLogic.setGui(chessboardGui);
             chessboardLogic.newGame();
             //chessboardLogic.customBoard();
             chessboardLogic.getChessboardGui().showGame();
+            MoveGenerator.runPerftUpToDepth(chessboardLogic,5);
         });
 
-        System.out.println();
-        System.out.println();
+
 
         /*
         for (int row = 0; row < 8; row++){

@@ -1,9 +1,12 @@
 package piecelogic;
 
 import chessboard.ChessboardLogic;
+import engine.MoveState;
 
 import static global.Global.shallowCopyBoard;
 import static chessboard.ChessboardLogic.decryptMove;
+import static engine.MoveGenerator.doMove;
+import static engine.MoveGenerator.undoMove;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,40 +57,17 @@ public abstract class Piece {
 
     public void filterIllegalMoves(ChessboardLogic chessboardLogic, List<Integer> moves){
 
-        Piece[][] refBoard;
-
         for (int i = moves.size() - 1; i >= 0; i--){
 
-            int[] move = decryptMove(moves.get(i));// fromRow, fromCol, toRow, toCol, enPassant, castle, promotion, doublePawnPush
+            int encryptedMove = moves.get(i);
+            MoveState moveState = doMove(chessboardLogic,encryptedMove);
 
-            int fromRow = move[0];
-            int fromCol = move[1];
-
-            int toRow = move[2];
-            int toCol = move[3];
-
-            boolean enPassant = move[4] == 1 ;
-            boolean castle = move[5] == 1;
-            boolean promoted = move[6] > 0;
-
-            refBoard = shallowCopyBoard(chessboardLogic.getChessboard());
-
-            refBoard[toRow][toCol] = refBoard[fromRow][fromCol];
-            refBoard[fromRow][fromCol] = null;
-
-            if (castle){
-                //handle castling move for king
-                int rookFromCol = (toCol == 6) ? 7 : 0;
-                int rookToCol = (toCol == 6) ? 5 : 3;
-
-                refBoard[toRow][rookToCol] = refBoard[toRow][rookFromCol];
-                refBoard[toRow][rookFromCol] = null;
-            }
-            //implement other special stuff
-
-            if ( chessboardLogic.isKingInCheck(isWhite(),refBoard) ){
+            if ( chessboardLogic.isKingInCheck(isWhite(), chessboardLogic.getChessboard()) ){
+                undoMove(chessboardLogic,encryptedMove,moveState);
                 moves.remove(i);
+                continue;
             }
+            undoMove(chessboardLogic,encryptedMove,moveState);
 
         }
 

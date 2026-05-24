@@ -56,10 +56,7 @@ public class Knight extends Piece {
                 if (refBoard[toRow][toCol] == null){
                     moves.add(move);
 
-                } else if (refBoard[toRow][toCol].isWhite() != isWhite() && refBoard[toRow][toCol].isKing()) {
-                    break;
-
-                } else if(refBoard[toRow][toCol].isWhite() != isWhite()) {
+                } else if(refBoard[toRow][toCol].isWhite() != isWhite() && !refBoard[toRow][toCol].isKing()) {
                     move |= 1 << 12;
                     moves.add(move);
 
