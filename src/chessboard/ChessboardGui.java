@@ -13,7 +13,7 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.*;
 
-import engine.MoveGenerator;
+import engine.Evaluator;
 import piecelogic.*;
 
 public class ChessboardGui extends JPanel {
@@ -361,10 +361,12 @@ public class ChessboardGui extends JPanel {
         javax.swing.SwingUtilities.invokeLater(() -> {
             ChessboardGui chessboardGui = new ChessboardGui();
             chessboardLogic.setGui(chessboardGui);
-            chessboardLogic.newGame(chessboardGui);
-            //chessboardLogic.customBoard(chessboardGui);
+            //chessboardLogic.newGame(chessboardGui);
+            chessboardLogic.customBoard(chessboardGui);
             chessboardLogic.getChessboardGui().showGame();
-            MoveGenerator.runPerftUpToDepth(chessboardLogic,5);
+            //MoveGenerator.runPerftUpToDepth(chessboardLogic,5);
+            System.out.println(Evaluator.countMaterial(chessboardLogic.chessboard, true));
+            System.out.println("Evaluation of the board for white : "+ Evaluator.evaluvate(chessboardLogic));
         });
 
 

@@ -94,16 +94,49 @@ public class ChessboardLogic {
         Piece[][] emptyBoard = new Piece[8][8];
         setChessboard(emptyBoard);
 
-        insertPieceToBoard(PieceFactory.createPiece(PieceType.KING, false), this.chessboard, 'e', 1);
-        insertPieceToBoard(PieceFactory.createPiece(PieceType.KING, true), this.chessboard, 'e', 3);
-        insertPieceToBoard(PieceFactory.createPiece(PieceType.KNIGHT, false), this.chessboard, 'e', 4);
-        insertPieceToBoard(PieceFactory.createPiece(PieceType.BISHOP, false), this.chessboard, 'e', 5);
-        insertPieceToBoard(PieceFactory.createPiece(PieceType.QUEEN, true), this.chessboard, 'd', 7);
+        // --- WHITE PIECES ---
+        // Rooks
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.ROOK, true), this.chessboard, 'a', 1);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.ROOK, true), this.chessboard, 'h', 1);
+        // Knights
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.KNIGHT, true), this.chessboard, 'b', 1);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.KNIGHT, true), this.chessboard, 'e', 2);
+        // Bishops
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.BISHOP, true), this.chessboard, 'c', 1);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.BISHOP, true), this.chessboard, 'c', 4);
+        // Queen
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.QUEEN, true), this.chessboard, 'd', 1);
+        // King
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.KING, true), this.chessboard, 'e', 1);
+        // Pawns
         insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, true), this.chessboard, 'a', 2);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, true), this.chessboard, 'b', 2);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, true), this.chessboard, 'c', 2);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, true), this.chessboard, 'g', 2);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, true), this.chessboard, 'h', 2);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, true), this.chessboard, 'd', 7);
+
+        // --- BLACK PIECES ---
+        // Rooks
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.ROOK, false), this.chessboard, 'a', 8);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.ROOK, false), this.chessboard, 'h', 8);
+        // Knights
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.KNIGHT, false), this.chessboard, 'b', 8);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.KNIGHT, false), this.chessboard, 'f', 2);
+        // Bishops
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.BISHOP, false), this.chessboard, 'c', 8);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.BISHOP, false), this.chessboard, 'e', 7);
+        // Queen
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.QUEEN, false), this.chessboard, 'd', 8);
+        // King
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.KING, false), this.chessboard, 'f', 8);
+        // Pawns
         insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, false), this.chessboard, 'a', 7);
-
-
-
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, false), this.chessboard, 'b', 7);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, false), this.chessboard, 'c', 6);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, false), this.chessboard, 'f', 7);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, false), this.chessboard, 'g', 7);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, false), this.chessboard, 'h', 7);
     }
 
     public static boolean isIndexWithinBounds(int row, int col){

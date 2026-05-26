@@ -320,8 +320,8 @@ public class MoveGenerator {
             long elapsedTimeMilli = TimeUnit.NANOSECONDS.toMillis(elapsedTimeNano);
 
 
-            System.out.println("Depth : "+i+"   Number of positions : "+numPositions+"  Time(ms) : "+elapsedTimeMilli);
-
+            //System.out.println("Depth : "+i+"   Number of positions : "+numPositions+"  Time(ms) : "+elapsedTimeMilli);
+            System.out.printf("\nDepth : %2d    Number of Positions : %,15d      Time(ms) : %,9d",i,numPositions,elapsedTimeMilli);
 
         }
 
