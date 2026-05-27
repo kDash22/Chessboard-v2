@@ -46,6 +46,7 @@ public class Pawn extends Piece{
                     bit  15 → castling
 
                     bit 16 (3 bits total) → promotion piece type
+                    bit 19 (5 bits total) → Winning capture
                 */
 
         //moving logic
@@ -89,6 +90,7 @@ public class Pawn extends Piece{
             {
                 int move = fromRow * 8 + fromCol;
                 move |= (toRow * 8 + toCol) << 6;
+                move |= winningCaptureValue(refBoard[toRow][toCol],PIECE_VALUE) << 19;//winning capture value
                 move |= 1 << 12; //bit 12 → capture
 
                 if (toRow == endRow) {
@@ -97,6 +99,7 @@ public class Pawn extends Piece{
                         promotion |= (toRow * 8 + toCol) << 6;
                         promotion |= 1 << 12; //bit 12 → capture
                         promotion |= i << 16; //bits 16 (2 bits total) → promotion piece type
+                        move |= winningCaptureValue(refBoard[toRow][toCol],PIECE_VALUE) << 19;//winning capture value
                         moves.add(promotion);
                     }
                 } else {
@@ -115,6 +118,7 @@ public class Pawn extends Piece{
             {
                 int move = fromRow * 8 + fromCol;
                 move |= (toRow * 8 + toCol) << 6;
+                move |= winningCaptureValue(refBoard[toRow][toCol],PIECE_VALUE) << 19;//winning capture value
                 move |= 1 << 12; //bit 12 → capture
 
                 if (toRow == endRow) {
@@ -122,6 +126,7 @@ public class Pawn extends Piece{
                         int promotion = fromRow * 8 + fromCol;
                         promotion |= (toRow * 8 + toCol) << 6;
                         promotion |= 1 << 12; //bit 12 → capture
+                        move |= winningCaptureValue(refBoard[toRow][toCol],PIECE_VALUE) << 19;//winning capture value
                         promotion |= i << 16; //bits 16 (3 bits total) → promotion piece type
                         moves.add(promotion);
                     }

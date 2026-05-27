@@ -35,6 +35,7 @@ public class Queen extends Piece{
                     bit  15 → castling
 
                     bit 16 (3 bits total) → promotion piece type
+                    bit 19 (5 bits total) → Winning capture
                 */
 
             int toRow = fromRow + direction[0];
@@ -50,6 +51,7 @@ public class Queen extends Piece{
 
                 } else if(refBoard[toRow][toCol].isWhite() != isWhite() && !refBoard[toRow][toCol].isKing()) {
                     move |= 1 << 12;
+                    move |= winningCaptureValue(refBoard[toRow][toCol],PIECE_VALUE) << 19;//winning capture value
                     moves.add(move);
                     break;
 

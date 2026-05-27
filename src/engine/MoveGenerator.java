@@ -12,6 +12,7 @@ public class MoveGenerator {
     public MoveList generateMoves(ChessboardLogic chessboardLogic) {
         int[] moves = new int[256]; //maximum moves for any given turn is estimated to be about 218
         Piece[][] refBoard = chessboardLogic.getChessboard();
+        int[] score = new int[256];
 
         int moveCount = 0;
 
@@ -32,12 +33,14 @@ public class MoveGenerator {
                         [ flags ][   to   ][  from  ]
                         bits12+   bits6-11    bits0-5
                      */
-                    moves[moveCount++] = pValidMoveSet[i]; // add flags if needed
+                    moves[moveCount] = pValidMoveSet[i]; // add flags if needed
+                    score[moveCount] = scoreMove(pValidMoveSet[i]);
+                    moveCount++;
                 }
 
             }
         }
-        return new MoveList(moves, moveCount);
+        return new MoveList(moves, score ,moveCount);
     }
 
     public static MoveState doMove(ChessboardLogic chessboardLogic, int encryptedMove) {
@@ -58,7 +61,7 @@ public class MoveGenerator {
             }
         }
 
-        int[] move = decryptMove(encryptedMove);// fromRow, fromCol, toRow, toCol, enPassant, castle, promotion, doublePawnPush
+        int[] move = decryptMove(encryptedMove);// fromRow, fromCol, toRow, toCol, enPassant, castle, promotion, doublePawnPush, winningCaptureValue
 
         int fromRow = move[0];
         int fromCol = move[1];
@@ -76,6 +79,7 @@ public class MoveGenerator {
         Piece capturedPiece = refBoard[toRow][toCol];
 
         boolean movingPieceHadMoved = false;
+
         if (movingPiece.isRook()) movingPieceHadMoved = ((Rook) movingPiece).getHasMoved();
         if (movingPiece.isKing()) movingPieceHadMoved = ((King) movingPiece).getHasMoved();
 
@@ -183,7 +187,7 @@ public class MoveGenerator {
 
         Piece capturedPiece = moveState.capturedPiece;
 
-        int[] move = decryptMove(encryptedMove);// fromRow, fromCol, toRow, toCol, enPassant, castle, promotion, doublePawnPush
+        int[] move = decryptMove(encryptedMove);// fromRow, fromCol, toRow, toCol, enPassant, castle, promotion, doublePawnPush, winningCaptureValue
 
         int fromRow = move[0];
         int fromCol = move[1];
@@ -325,6 +329,14 @@ public class MoveGenerator {
 
         }
 
+    }
+
+    //develop this method to reduce scanned positions
+    private static int scoreMove(int move){
+
+        int score = (move >> 19) & 31;
+        //add more logic later
+        return score;
     }
 
 

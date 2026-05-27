@@ -71,6 +71,19 @@ public abstract class Piece {
 
     }
 
+    public int winningCaptureValue(Piece piece, int ownValue){
+
+        int value = 0;
+        switch (piece.getPieceType()){
+            case QUEEN -> value = 9;
+            case ROOK -> value = 5;
+            case BISHOP, KNIGHT -> value = 3;
+            case PAWN -> value = 1;
+        }
+
+        return 8+value-ownValue;
+    }
+
     public abstract boolean attacksSquare(Piece[][] refBoard,int pieceRow, int pieceCol, int targetRow, int targetCol);
 
     public abstract void moveCheck(ChessboardLogic chessboardLogic, int fromRow, int fromCol);

@@ -14,6 +14,7 @@ import java.awt.event.MouseEvent;
 import javax.swing.*;
 
 import engine.Evaluator;
+import engine.MoveGenerator;
 import piecelogic.*;
 
 public class ChessboardGui extends JPanel {
@@ -357,7 +358,7 @@ public class ChessboardGui extends JPanel {
 
         ChessboardLogic chessboardLogic = new ChessboardLogic();
 
-
+        /*
         javax.swing.SwingUtilities.invokeLater(() -> {
             ChessboardGui chessboardGui = new ChessboardGui();
             chessboardLogic.setGui(chessboardGui);
@@ -366,9 +367,25 @@ public class ChessboardGui extends JPanel {
             chessboardLogic.getChessboardGui().showGame();
             //MoveGenerator.runPerftUpToDepth(chessboardLogic,5);
             System.out.println(Evaluator.countMaterial(chessboardLogic.chessboard, true));
-            System.out.println("Evaluation of the board for white : "+ Evaluator.evaluvate(chessboardLogic));
+            System.out.println("Evaluation of the board for white : "+ Evaluator.evaluate(chessboardLogic));
         });
 
+         */
+        ChessboardGui chessboardGui = new ChessboardGui();
+        chessboardLogic.setGui(chessboardGui);
+        //chessboardLogic.newGame(chessboardGui);
+        chessboardLogic.customBoard(chessboardGui);
+        //chessboardLogic.singlePiece(chessboardGui);
+        chessboardLogic.getChessboardGui().showGame();
+        //MoveGenerator.runPerftUpToDepth(chessboardLogic,4);
+        System.out.println();
+        System.out.println("NegaMax with Pruning search : ");
+        System.out.println("With pre calculated scores array ");
+
+        //Evaluator.minimaxer(chessboardLogic,3,chessboardLogic.isWhiteToMove());
+        //Evaluator.negamaxer(chessboardLogic,4);
+        //System.out.println(Evaluator.countMaterial(chessboardLogic.chessboard, true));
+        //System.out.println("Evaluation of the board for white : "+ Evaluator.evaluate(chessboardLogic));
 
         /*
         for (int row = 0; row < 8; row++){
