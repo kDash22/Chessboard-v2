@@ -284,7 +284,7 @@ public class Evaluator {
         System.out.printf("For : %s Depth : %2d    Number of Positions : %,15d      Time : %,9dms (%,.2fs)    Evaluation : %,5d\n",colour,depth, negamaxPrune[1],elapsedTimeMilli,inSeconds, negamaxPrune[0]);
     }
 
-    public static void oderedNegamaxPruner(ChessboardLogic chessboardLogic, int depth, int alpha, int beta){
+    public static void orderedNegamaxPruner(ChessboardLogic chessboardLogic, int depth, int alpha, int beta){
         long start = System.nanoTime();
         int[] negamaxPrune = orderedNegamaxPrune(chessboardLogic,depth,alpha,beta);
         long end = System.nanoTime();

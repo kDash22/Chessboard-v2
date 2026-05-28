@@ -47,6 +47,7 @@ public class Pawn extends Piece{
 
                     bit 16 (3 bits total) → promotion piece type
                     bit 19 (5 bits total) → Winning capture
+                    bit 24 → check
                 */
 
         //moving logic
@@ -172,6 +173,9 @@ public class Pawn extends Piece{
         for (int i = 0; i < validMoveCount; i++){
             validMoveSet[i] = moves.get(i);
         }
+
+        applyCheckFlag(refBoard,validMoveSet);
+
     }
 
     @Override

@@ -36,6 +36,7 @@ public class Queen extends Piece{
 
                     bit 16 (3 bits total) → promotion piece type
                     bit 19 (5 bits total) → Winning capture
+                    bit 24 → check
                 */
 
             int toRow = fromRow + direction[0];
@@ -72,6 +73,9 @@ public class Queen extends Piece{
         for (int i = 0; i < validMoveCount; i++){
             validMoveSet[i] = moves.get(i);
         }
+
+        applyCheckFlag(refBoard,validMoveSet);
+
     }
 
     @Override

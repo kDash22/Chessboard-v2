@@ -345,7 +345,7 @@ public class ChessboardGui extends JPanel {
         Piece[][] refBoard = chessboardLogic.getChessboard();
 
         if (chessboardLogic.isKingInCheck(whiteToMove, refBoard)){
-            int[] kingPos = chessboardLogic.getKingPos(whiteToMove, refBoard);
+            int[] kingPos = ChessboardLogic.getKingPos(whiteToMove, refBoard);
             int row = kingPos[0];
             int col = kingPos[1];
 
@@ -380,7 +380,7 @@ public class ChessboardGui extends JPanel {
         //MoveGenerator.runPerftUpToDepth(chessboardLogic,4);
         System.out.println();
         System.out.println("NegaMax with Pruning search : ");
-        System.out.println("With pre calculated scores array ");
+        System.out.println("With pre calculated scores array (with check, promotion, and updated winning capture) ");
 
         //Evaluator.minimaxer(chessboardLogic,3,chessboardLogic.isWhiteToMove());
         //Evaluator.negamaxer(chessboardLogic,4);

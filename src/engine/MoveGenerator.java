@@ -61,7 +61,8 @@ public class MoveGenerator {
             }
         }
 
-        int[] move = decryptMove(encryptedMove);// fromRow, fromCol, toRow, toCol, enPassant, castle, promotion, doublePawnPush, winningCaptureValue
+        int[] move = decryptMove(encryptedMove);// fromRow, fromCol, toRow, toCol, enPassant, castle,
+        // promotion, doublePawnPush, winningCaptureValue, check
 
         int fromRow = move[0];
         int fromCol = move[1];
@@ -187,7 +188,8 @@ public class MoveGenerator {
 
         Piece capturedPiece = moveState.capturedPiece;
 
-        int[] move = decryptMove(encryptedMove);// fromRow, fromCol, toRow, toCol, enPassant, castle, promotion, doublePawnPush, winningCaptureValue
+        int[] move = decryptMove(encryptedMove);// fromRow, fromCol, toRow, toCol, enPassant, castle,
+        // promotion, doublePawnPush, winningCaptureValue, check
 
         int fromRow = move[0];
         int fromCol = move[1];
@@ -334,7 +336,22 @@ public class MoveGenerator {
     //develop this method to reduce scanned positions
     private static int scoreMove(int move){
 
-        int score = (move >> 19) & 31;
+        int[] decryptedMove = decryptMove(move);// fromRow, fromCol, toRow, toCol, enPassant, castle,
+        // promotion, doublePawnPush, winningCaptureValue,check
+
+        int score = 0;
+
+        score += decryptedMove[8] << 10;// points from 0 to 16, highest being pawn taking a queen
+
+        switch (decryptedMove[6]){
+            case 1 -> score += 8500;//knight
+            case 2 -> score += 6000;//bishop
+            case 3 -> score += 7000;//rook
+            case 4 -> score += 10000;//queen
+        }
+
+        score += decryptedMove[9] == 1 ? 100 : 0;// for a check
+
         //add more logic later
         return score;
     }

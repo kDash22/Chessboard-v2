@@ -277,11 +277,11 @@ public class ChessboardLogic {
         //Evaluator.minimaxer(this,3,isWhiteToMove());
         //Evaluator.negamaxer(this,4);
         //Evaluator.negamaxPruner(this,4,Integer.MIN_VALUE + 1,Integer.MAX_VALUE - 1);
-        Evaluator.oderedNegamaxPruner(this,4,Integer.MIN_VALUE + 1,Integer.MAX_VALUE-1);
+        Evaluator.orderedNegamaxPruner(this,4,Integer.MIN_VALUE + 1,Integer.MAX_VALUE-1);
     }
 
     //a method to check if a square is attacked by a specified color
-    public boolean isSquareAttacked(boolean attackerIsWhite, Piece[][] refBoard, int row, int col){
+    public static boolean isSquareAttacked(boolean attackerIsWhite, Piece[][] refBoard, int row, int col){
 
         for (int pieceRow = 0; pieceRow < 8; pieceRow++){
             for (int pieceCol = 0; pieceCol < 8; pieceCol++ ){
@@ -300,7 +300,7 @@ public class ChessboardLogic {
         return false;
     }
 
-    public int[] getKingPos(boolean isWhite, Piece[][] chessboard){
+    public static int[] getKingPos(boolean isWhite, Piece[][] chessboard){
 
         for (int row = 0; row < 8; row++){
             for (int col = 0; col < 8; col++){
@@ -316,7 +316,7 @@ public class ChessboardLogic {
         throw new IllegalStateException("No king found for color : "+ (isWhite ? "white" : "black") );
     }
 
-    public boolean isKingInCheck(boolean isWhite, Piece[][] chessboard){
+    public static boolean isKingInCheck(boolean isWhite, Piece[][] chessboard){
 
         int[] kingPos = getKingPos(isWhite, chessboard);
         return isSquareAttacked(!isWhite, chessboard, kingPos[0], kingPos[1]);
@@ -474,8 +474,9 @@ public class ChessboardLogic {
         int promotion = (move >> 16) & 7;// binary 111
         int doublePawnPush = (move >> 13) & 1;
         int winningCaptureValue = (move >> 19) & 31; // binary 11111
+        int check = (move >> 24) & 1;
 
-        return new int[]{fromRow, fromCol, toRow ,toCol, enPassant, castle, promotion, doublePawnPush,winningCaptureValue};
+        return new int[]{fromRow, fromCol, toRow ,toCol, enPassant, castle, promotion, doublePawnPush,winningCaptureValue,check};
     }
 
     public static int[] getToSquare(int move){

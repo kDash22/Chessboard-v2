@@ -87,4 +87,43 @@ public abstract class Piece {
     public abstract boolean attacksSquare(Piece[][] refBoard,int pieceRow, int pieceCol, int targetRow, int targetCol);
 
     public abstract void moveCheck(ChessboardLogic chessboardLogic, int fromRow, int fromCol);
+
+    protected void applyCheckFlag(Piece[][] refBoard,int[] validMoveSet){
+
+        int[] kingPos = ChessboardLogic.getKingPos(!isWhite(),refBoard);
+
+        for (int i = 0; i < validMoveSet.length; i++){
+
+            int[] toSquare = ChessboardLogic.getToSquare(validMoveSet[i]);
+
+            if (isPawn()){ //if a pawn is promoted it cannot be checked if the new piece attacks the king using the
+                            //pawn attack check logic
+
+                int promotion = (validMoveSet[i] >> 16) & 7;
+
+                if (promotion > 0){
+
+                    boolean attacked = false;
+
+                    switch (promotion){
+                        case 1 -> attacked = new Knight(isWhite()).attacksSquare(refBoard,toSquare[0],toSquare[1],kingPos[0],kingPos[1]);
+                        case 2 -> attacked = new Bishop(isWhite()).attacksSquare(refBoard,toSquare[0],toSquare[1],kingPos[0],kingPos[1]);
+                        case 3 -> attacked = new Rook(isWhite()).attacksSquare(refBoard,toSquare[0],toSquare[1],kingPos[0],kingPos[1]);
+                        case 4 -> attacked = new Queen(isWhite()).attacksSquare(refBoard,toSquare[0],toSquare[1],kingPos[0],kingPos[1]);
+                        default -> throw new IllegalArgumentException("Error at apply check flag at pawn promotion section !");
+                    }
+
+                    if (attacked){
+                        validMoveSet[i] |= 1 << 24; //bit 24 → check
+                    }
+                    continue;
+                }
+            }
+
+            if ( attacksSquare(refBoard,toSquare[0],toSquare[1],kingPos[0],kingPos[1]) ){
+                validMoveSet[i] |= 1 << 24; //bit 24 → check
+            }
+
+        }
+    }
 }

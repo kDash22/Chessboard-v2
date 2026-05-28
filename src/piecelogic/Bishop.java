@@ -36,6 +36,8 @@ public class Bishop extends Piece{
 
                     bit 16 (3 bits total) → promotion piece type
                     bit 19 (5 bits total) → Winning capture
+                    bit 24 → check
+
                 */
 
             int toRow = fromRow + direction[0];
@@ -70,11 +72,13 @@ public class Bishop extends Piece{
         for (int i = 0; i < validMoveCount; i++){
             validMoveSet[i] = moves.get(i);
         }
+
+        applyCheckFlag(refBoard,validMoveSet);
     }
 
 
     @Override
-    public boolean attacksSquare(Piece[][] refBoard,int pieceRow, int pieceCol, int targetRow, int targetCol) {
+    public boolean attacksSquare(Piece[][] refBoard, int pieceRow, int pieceCol, int targetRow, int targetCol) {
 
         if (Math.abs(targetRow - pieceRow) != Math.abs(targetCol - pieceCol))
             return false;
