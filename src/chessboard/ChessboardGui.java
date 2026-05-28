@@ -380,7 +380,7 @@ public class ChessboardGui extends JPanel {
         //MoveGenerator.runPerftUpToDepth(chessboardLogic,4);
         System.out.println();
         System.out.println("NegaMax with Pruning search : ");
-        System.out.println("With pre calculated scores array ");
+        System.out.println("With pre calculated scores array (v1)");
 
         //Evaluator.minimaxer(chessboardLogic,3,chessboardLogic.isWhiteToMove());
         //Evaluator.negamaxer(chessboardLogic,4);
