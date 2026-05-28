@@ -10,6 +10,7 @@ import static chessboard.ChessboardLogic.*;
 public class MoveGenerator {
 
     public MoveList generateMoves(ChessboardLogic chessboardLogic) {
+
         int[] moves = new int[256]; //maximum moves for any given turn is estimated to be about 218
         Piece[][] refBoard = chessboardLogic.getChessboard();
         int[] score = new int[256];

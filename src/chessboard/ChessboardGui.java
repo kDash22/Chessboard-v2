@@ -344,7 +344,7 @@ public class ChessboardGui extends JPanel {
         boolean whiteToMove = chessboardLogic.isWhiteToMove();
         Piece[][] refBoard = chessboardLogic.getChessboard();
 
-        if (chessboardLogic.isKingInCheck(whiteToMove, refBoard)){
+        if (ChessboardLogic.isKingInCheck(whiteToMove, refBoard)){
             int[] kingPos = ChessboardLogic.getKingPos(whiteToMove, refBoard);
             int row = kingPos[0];
             int col = kingPos[1];
@@ -373,8 +373,8 @@ public class ChessboardGui extends JPanel {
          */
         ChessboardGui chessboardGui = new ChessboardGui();
         chessboardLogic.setGui(chessboardGui);
-        //chessboardLogic.newGame(chessboardGui);
-        chessboardLogic.customBoard(chessboardGui);
+        chessboardLogic.newGame(chessboardGui);
+        //chessboardLogic.customBoard(chessboardGui);
         //chessboardLogic.singlePiece(chessboardGui);
         chessboardLogic.getChessboardGui().showGame();
         //MoveGenerator.runPerftUpToDepth(chessboardLogic,4);

@@ -277,7 +277,9 @@ public class ChessboardLogic {
         //Evaluator.minimaxer(this,3,isWhiteToMove());
         //Evaluator.negamaxer(this,4);
         //Evaluator.negamaxPruner(this,4,Integer.MIN_VALUE + 1,Integer.MAX_VALUE - 1);
-        Evaluator.orderedNegamaxPruner(this,6,Integer.MIN_VALUE + 1,Integer.MAX_VALUE-1);
+
+        if (!isWhiteToMove())//runs only for black for testing purposes
+            Evaluator.orderedNegamaxPruner(this,7,Integer.MIN_VALUE + 1,Integer.MAX_VALUE-1);
     }
 
     //a method to check if a square is attacked by a specified color
@@ -475,6 +477,9 @@ public class ChessboardLogic {
         int doublePawnPush = (move >> 13) & 1;
         int winningCaptureValue = (move >> 19) & 31; // binary 11111
         int check = (move >> 24) & 1;
+
+        // fromRow, fromCol, toRow, toCol, enPassant, castle,
+        // promotion, doublePawnPush, winningCaptureValue, check
 
         return new int[]{fromRow, fromCol, toRow ,toCol, enPassant, castle, promotion, doublePawnPush,winningCaptureValue,check};
     }

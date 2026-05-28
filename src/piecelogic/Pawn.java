@@ -147,6 +147,8 @@ public class Pawn extends Piece{
                 && ((Pawn) pieceToTheLeft).getEnPassantVulnerable() && isWhite() != pieceToTheLeft.isWhite()){
             int dir = isWhite() ? -1 : 1;
             int move = fromRow * 8 + fromCol;
+            move |= 1 << 12; //bit 12 → capture
+            move |= winningCaptureValue(pieceToTheLeft,PIECE_VALUE) << 19;//winning capture value
             move |= ((fromRow+dir) * 8 + (fromCol-1)) << 6;
             move |= 1 << 14; //bit 14 → en passant
             moves.add(move);
@@ -159,6 +161,8 @@ public class Pawn extends Piece{
                 && ((Pawn) pieceToTheRight).getEnPassantVulnerable() && isWhite() != pieceToTheRight.isWhite()){
             int dir = isWhite() ? -1 : 1;
             int move = fromRow * 8 + fromCol;
+            move |= 1 << 12; //bit 12 → capture
+            move |= winningCaptureValue(pieceToTheRight,PIECE_VALUE) << 19;//winning capture value
             move |= ((fromRow+dir) * 8 + (fromCol+1)) << 6;
             move |= 1 << 14; //bit 14 → en passant
             moves.add(move);
