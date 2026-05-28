@@ -277,7 +277,7 @@ public class ChessboardLogic {
         //Evaluator.minimaxer(this,3,isWhiteToMove());
         //Evaluator.negamaxer(this,4);
         //Evaluator.negamaxPruner(this,4,Integer.MIN_VALUE + 1,Integer.MAX_VALUE - 1);
-        Evaluator.orderedNegamaxPruner(this,4,Integer.MIN_VALUE + 1,Integer.MAX_VALUE-1);
+        Evaluator.orderedNegamaxPruner(this,6,Integer.MIN_VALUE + 1,Integer.MAX_VALUE-1);
     }
 
     //a method to check if a square is attacked by a specified color
