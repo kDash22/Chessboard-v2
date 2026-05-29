@@ -3,10 +3,10 @@ name: CI/CD - Run Chessboard GUI
 on:
   push:
     branches:
-     - main
+      - main
   pull_request:
     branches:
-     - main
+      - main
 
 jobs:
   build-and-run:
@@ -25,11 +25,15 @@ jobs:
       - name: Install Xvfb (Virtual Display for GUI testing)
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
-      - name: Compile Java Sources
+      - name: Compile Java Sources and Copy Resources
         run: |
           mkdir -p out
-          # Finds and compiles all .java files in the src folder into the out folder
+          
+          # 1. Finds and compiles all .java files in the src folder into the out folder
           javac -d out -sourcepath src $(find src -name "*.java")
+          
+          # 2. Copy all non-Java files (like .png images) from src/ to out/
+          rsync -a --exclude="*.java" src/ out/
 
       - name: Run ChessboardGui
         # Uses xvfb-run to simulate a display for the GUI application
