@@ -224,8 +224,8 @@ public class Evaluator {
 
         if (moveCount == 0) {
             if (ChessboardLogic.isKingInCheck(chessboardLogic.isWhiteToMove(),chessboardLogic.getChessboard())){
-                return new int[]{-100000, 0, 1};
-            }
+                // By subtracting depth, the engine favors slower mates when losing, and faster mates when winning!
+                return new int[]{-100000 - depth, 0, 1};            }
             return new int[]{0, 0, 1};
         }
 
@@ -256,6 +256,7 @@ public class Evaluator {
 
             if (movePositionState.seenCount >= 2){//check for the 3 time repetition
 
+                ChessBot.rollbackRepetitionMap(newHash);
                 MoveGenerator.undoMove(chessboardLogic,move,movePositionState.moveState);
 
                 int score = DRAW_SCORE;
@@ -288,6 +289,7 @@ public class Evaluator {
 
             alpha = Math.max(alpha,score);
 
+            ChessBot.rollbackRepetitionMap(newHash);
             MoveGenerator.undoMove(chessboardLogic,move,movePositionState.moveState);
 
             numPositions += negamaxPrune[2];
@@ -306,15 +308,35 @@ public class Evaluator {
         int eval = evaluate(chessboardLogic,phase);
         int bestMove = 0;
 
+        boolean inCheck = ChessboardLogic.isKingInCheck(chessboardLogic.isWhiteToMove(), chessboardLogic.getChessboard());
+
         if (eval >= beta){//opponent will never make that move
             return new int[]{eval,bestMove,-1};
+        }
+
+        int bestScore = -10000;
+
+        if (!inCheck) {
+            bestScore = eval;
+            if (eval >= beta) {
+                return new int[]{eval, bestMove, -1};
+            }
+            if (eval > alpha) {
+                alpha = eval;
+            }
         }
 
         if (eval > alpha){//best score we can guarantee
             alpha = eval;
         }
 
-        MoveList moveList = MoveGenerator.generateCaptures(chessboardLogic);
+        MoveList moveList;
+        if (inCheck) {
+            moveList = MoveGenerator.generateMoves(chessboardLogic);//GENERATE ALL MOVES IF IN CHECK
+        } else {
+            moveList = MoveGenerator.generateCaptures(chessboardLogic);
+        }
+
         int[] moves = moveList.moves;
         int[] scores = moveList.scores;
         int moveCount = moveList.size;
@@ -340,12 +362,17 @@ public class Evaluator {
             int[] quiescenceSearch = quiescenceSearch(chessboardLogic,-beta,-alpha,movePositionState.position.hash);
             int score = -quiescenceSearch[0];
 
+            ChessBot.rollbackRepetitionMap(movePositionState.position.hash);
             MoveGenerator.undoMove(chessboardLogic,moves[i],movePositionState.moveState);
+
+            if (score > bestScore){
+                bestScore = score;
+                bestMove = moves[i];
+
+            }
 
             if (score >= beta){
                 return new int[]{score,bestMove,-1};
-
-
             }
 
             if (score > alpha){
@@ -353,7 +380,7 @@ public class Evaluator {
                 bestMove = moves[i];
             }
         }
-        return new int[]{alpha,bestMove,-1};
+        return new int[]{bestScore,bestMove,-1};
     }
 
     protected static void orderedNegamaxPruner(ChessboardLogic chessboardLogic, int depth, int alpha, int beta,long hash){
@@ -382,8 +409,7 @@ public class Evaluator {
 
         System.out.printf("Best move : %s ( %1c%1d -> %1c%1d )\n",piece,fromFile,fromChessRow,toFile,toChessRow);
 
-        ChessBot.updateHash(chessboardLogic,negamaxPrune[1],hash);
-        doMoveAndUpdate(chessboardLogic,negamaxPrune[1],hash);//for testing against other bots
+        doMoveAndUpdate(chessboardLogic,negamaxPrune[1],hash);
     }
 
     public static void swap(int[] moves, int i, int bestIndex ){

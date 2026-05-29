@@ -3,6 +3,7 @@ package piecelogic;
 import chessboard.ChessboardLogic;
 import engine.MoveState;
 
+import static chessboard.ChessboardLogic.isKingInCheck;
 import static engine.MoveGenerator.doMove;
 import static engine.MoveGenerator.undoMove;
 
@@ -60,7 +61,7 @@ public abstract class Piece {
             int encryptedMove = moves.get(i);
             MoveState moveState = doMove(chessboardLogic,encryptedMove);
 
-            if ( chessboardLogic.isKingInCheck(isWhite(), chessboardLogic.getChessboard()) ){
+            if ( ChessboardLogic.isKingInCheck(isWhite(), chessboardLogic.getChessboard()) ){
                 undoMove(chessboardLogic,encryptedMove,moveState);
                 moves.remove(i);
                 continue;
@@ -74,6 +75,7 @@ public abstract class Piece {
     public int winningCaptureValue(Piece piece, int ownValue){
 
         int value = 0;
+
         switch (piece.getPieceType()){
             case QUEEN -> value = 9;
             case ROOK -> value = 5;
@@ -102,7 +104,7 @@ public abstract class Piece {
 
             int[] toSquare = ChessboardLogic.getToSquare(move);
 
-            if ( attacksSquare(refBoard,toSquare[0],toSquare[1],kingPos[0],kingPos[1]) ){
+            if ( isKingInCheck(!isWhite(), refBoard) ){
                 validMoveSet[i] |= 1 << 24; //bit 24 → check
             }
 

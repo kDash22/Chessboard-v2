@@ -34,12 +34,22 @@ public class MoveGenerator {
                 int phase = Evaluator.calculatePhase(chessboardLogic);
 
                 for (int i = 0; i < pValidMoveSet.length; i++) {
+                    int move = pValidMoveSet[i];
+
+                    boolean isCapture = ((move >> 12) & 1) == 1;
+                    boolean isPromotion = ((move >> 16) & 7) > 0;//calculates promotions too
+
+                    int[] toSquare = ChessboardLogic.getToSquare(move);
+                    int fromRow = (move & 0b111111) / 8;
+                    int fromCol = (move & 0b111111) % 8;
                     /*
                         [ flags ][   to   ][  from  ]
                         bits12+   bits6-11    bits0-5
                      */
-                    moves[moveCount] = pValidMoveSet[i]; // add flags if needed
-                    score[moveCount] = scoreMove(pValidMoveSet[i],phase);
+                    moves[moveCount] = move; // add flags if needed
+                    boolean isToSquareAttacked = ChessboardLogic.isSquareAttacked(!chessboardLogic.isWhiteToMove(),refBoard,toSquare[0],toSquare[1]);
+                    boolean isFromSquareAttacked = ChessboardLogic.isSquareAttacked(!chessboardLogic.isWhiteToMove(),refBoard,fromRow,fromCol);
+                    score[moveCount] = scoreMove(pValidMoveSet[i],phase, isFromSquareAttacked,isToSquareAttacked);
                     moveCount++;
                 }
 
@@ -71,16 +81,27 @@ public class MoveGenerator {
                 int phase = Evaluator.calculatePhase(chessboardLogic);
 
                 for (int i = 0; i < pValidMoveSet.length; i++) {
+
+                    int move = pValidMoveSet[i];
+
+                    boolean isCapture = ((move >> 12) & 1) == 1;
+                    boolean isPromotion = ((move >> 16) & 7) > 0;//calculates promotions too
+
+                    //If it is neither a capture nor a promotion, skip
+                    if (!isCapture && !isPromotion) {
+                        continue;
+                    }
+                    int[] toSquare = ChessboardLogic.getToSquare(move);
+                    int fromRow = (move & 0b111111) / 8;
+                    int fromCol = (move & 0b111111) % 8;
                     /*
                         [ flags ][   to   ][  from  ]
                         bits12+   bits6-11    bits0-5
                      */
-                    int move = pValidMoveSet[i];
-                    if ((move >> 12 & 1) != 1)
-                        continue;
-
                     moves[moveCount] = move; // add flags if needed
-                    score[moveCount] = scoreCapture(move);
+                    boolean isToSquareAttacked = ChessboardLogic.isSquareAttacked(!chessboardLogic.isWhiteToMove(),refBoard,toSquare[0],toSquare[1]);
+                    boolean isFromSquareAttacked = ChessboardLogic.isSquareAttacked(!chessboardLogic.isWhiteToMove(),refBoard,fromRow,fromCol);
+                    score[moveCount] = scoreMove(pValidMoveSet[i],phase, isFromSquareAttacked,isToSquareAttacked);
                     moveCount++;
                 }
 
@@ -380,7 +401,7 @@ public class MoveGenerator {
     }
 
     //develop this method to reduce scanned positions
-    private static int scoreMove(int move, int phase){
+    private static int scoreMove(int move, int phase, boolean isFromSquareAttacked,boolean isToSquareAttacked){
 
         int[] decryptedMove = decryptMove(move);// fromRow, fromCol, toRow, toCol, enPassant, castle,
         // promotion, doublePawnPush, winningCaptureValue,check
@@ -408,7 +429,8 @@ public class MoveGenerator {
 
         int score = ( mgScore * phase + egScore * (24 - phase)) / 24;
 
-        score += decryptedMove[8] << 10;// points from 0 to 16, highest being pawn taking a queen
+        int winningCaptureValue = decryptedMove[8];
+        score += winningCaptureValue > 8 ? winningCaptureValue << 10 : winningCaptureValue << 6;// points from 0 to 16, highest being pawn taking a queen
 
         switch (decryptedMove[6]){
             case 1 -> score += 8500;//knight
@@ -417,29 +439,18 @@ public class MoveGenerator {
             case 4 -> score += 10000;//queen
         }
 
+        score += decryptedMove[5] == 1 ? 3500 : 0;//for a castle
         score += decryptedMove[9] == 1 ? 100 : 0;// for a check
+
+        if ( (move >> 12 & 1) == 1){
+            score += isToSquareAttacked ? -4000 : 0;
+        } else {
+            score += isToSquareAttacked ? -500 : 0;
+        }
+
+        score += isFromSquareAttacked ? 200 : 0;
 
         //add more logic later
-        return score;
-    }
-
-    private static int scoreCapture(int move){
-
-        int[] decryptedMove = decryptMove(move);// fromRow, fromCol, toRow, toCol, enPassant, castle,
-        // promotion, doublePawnPush, winningCaptureValue,check
-        int score = 0;
-
-        score += decryptedMove[8] << 10;// points from 0 to 16, highest being pawn taking a queen
-
-        switch (decryptedMove[6]){
-            case 1 -> score += 8500;//knight
-            case 2 -> score += 6000;//bishop
-            case 3 -> score += 7000;//rook
-            case 4 -> score += 10000;//queen
-        }
-
-        score += decryptedMove[9] == 1 ? 100 : 0;// for a check
-
         return score;
     }
 

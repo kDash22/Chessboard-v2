@@ -296,7 +296,7 @@ public class ChessBot {
 
         int newCastleIndex = 0;
 
-        if (movingPiece.isKing() && ((King)movingPiece).getHasMoved() ){
+        if (movingPiece.isKing() && !((King)movingPiece).getHasMoved() ){
             newCastleIndex = movingPiece.isWhite() ? oldCastleIndex & 0b1100 : oldCastleIndex & 0b0011;
             hash ^= castlingKey[oldCastleIndex];//remove old castle index
             hash ^= castlingKey[newCastleIndex];//apply the new castle index
@@ -304,7 +304,7 @@ public class ChessBot {
             castlingKeyUpdated = true;
         }
 
-        if (movingPiece.isRook() && ((Rook)movingPiece).getHasMoved()){
+        if (movingPiece.isRook() && !((Rook)movingPiece).getHasMoved()){
             int flag;
             if (movingPiece.isWhite())
                 flag = (fromCol == 7) ?  0b1110 : 0b1101 ; //king side or queen side castling permission withdrawal
@@ -350,6 +350,15 @@ public class ChessBot {
         int count = repetition.getOrDefault(hash,0);
 
         return count >= 3;
+
+    }
+
+    public static void rollbackRepetitionMap(long newHash){
+        int seenCount = repetition.getOrDefault(newHash, 0);
+
+        if (seenCount != 0){
+            repetition.put(newHash, seenCount +1);//update seenCount in map
+        }
 
     }
 
