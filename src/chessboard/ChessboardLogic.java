@@ -284,8 +284,10 @@ public class ChessboardLogic {
         //Evaluator.negamaxPruner(this,4,Integer.MIN_VALUE + 1,Integer.MAX_VALUE - 1);
 
 
-        if (!isWhiteToMove() && !gameOver)//runs only for black for testing purposes
-            chessBot.run(this,7);
+        if (!isWhiteToMove() && !gameOver){//runs only for black for testing purposes
+            chessBot.run(this,6);
+            checkGameOver();
+        }
 
 
     }

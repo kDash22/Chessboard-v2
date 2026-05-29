@@ -249,12 +249,14 @@ public class Evaluator {
             swap(moves,i,bestIndex);
             swap(scores,i,bestIndex);
 
+            int move = moves[i];
+
             MovePositionState movePositionState = doMoveAndUpdate(chessboardLogic,moves[i],hash);
             long newHash = movePositionState.position.hash;
 
             if (movePositionState.seenCount >= 2){//check for the 3 time repetition
 
-                undoMoveAndRollback(chessboardLogic,moves[i],movePositionState,newHash);
+                MoveGenerator.undoMove(chessboardLogic,move,movePositionState.moveState);
 
                 int score = DRAW_SCORE;
 
@@ -286,7 +288,7 @@ public class Evaluator {
 
             alpha = Math.max(alpha,score);
 
-            undoMoveAndRollback(chessboardLogic,moves[i],movePositionState,hash);
+            MoveGenerator.undoMove(chessboardLogic,move,movePositionState.moveState);
 
             numPositions += negamaxPrune[2];
 
@@ -338,7 +340,7 @@ public class Evaluator {
             int[] quiescenceSearch = quiescenceSearch(chessboardLogic,-beta,-alpha,movePositionState.position.hash);
             int score = -quiescenceSearch[0];
 
-            undoMoveAndRollback(chessboardLogic,moves[i],movePositionState,movePositionState.position.hash);
+            MoveGenerator.undoMove(chessboardLogic,moves[i],movePositionState.moveState);
 
             if (score >= beta){
                 return new int[]{score,bestMove,-1};
@@ -378,7 +380,7 @@ public class Evaluator {
 
         Piece piece = chessboardLogic.getChessboard()[decryptedMove[0]][decryptedMove[1]];
 
-        System.out.printf("Best move : %s ( %1c%1d -> %1c%1d \n)",piece,fromFile,fromChessRow,toFile,toChessRow);
+        System.out.printf("Best move : %s ( %1c%1d -> %1c%1d )\n",piece,fromFile,fromChessRow,toFile,toChessRow);
 
         ChessBot.updateHash(chessboardLogic,negamaxPrune[1],hash);
         doMoveAndUpdate(chessboardLogic,negamaxPrune[1],hash);//for testing against other bots
@@ -398,19 +400,6 @@ public class Evaluator {
         repetition.put(position.hash, seenCount +1);//update seenCount in map
 
         return new MovePositionState(moveState,position, seenCount);
-    }
-
-    //wrapper method for undoing a move in negamax search
-    private static void undoMoveAndRollback(ChessboardLogic chessboardLogic,int encryptedMove, MovePositionState movePositionState,long newHash){
-        rollbackHash(chessboardLogic,encryptedMove,movePositionState.position,newHash);
-        MoveGenerator.undoMove(chessboardLogic,encryptedMove,movePositionState.moveState);
-
-        // Safely revert the repetition count
-        if (movePositionState.seenCount == 0) {
-            repetition.remove(newHash);
-        } else {
-            repetition.put(newHash, movePositionState.seenCount);
-        }
     }
 
     public static int calculatePhase(ChessboardLogic chessboardLogic){

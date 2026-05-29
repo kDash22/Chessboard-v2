@@ -268,6 +268,7 @@ public class ChessBot {
             hash ^= pieceSquare[pieceIndex(pawn)][enPassantSquare];//remove victim pawn
         }
 
+
         //if castle change rook position
         if (castle){
 
@@ -290,10 +291,17 @@ public class ChessBot {
             }
         }
 
+        boolean castlingKeyUpdated = false;
+        int updatedCastlingIndex = 0;
+
+        int newCastleIndex = 0;
+
         if (movingPiece.isKing() && ((King)movingPiece).getHasMoved() ){
-            int newCastleIndex = movingPiece.isWhite() ? oldCastleIndex & 0b1100 : oldCastleIndex & 0b0011;
+            newCastleIndex = movingPiece.isWhite() ? oldCastleIndex & 0b1100 : oldCastleIndex & 0b0011;
             hash ^= castlingKey[oldCastleIndex];//remove old castle index
             hash ^= castlingKey[newCastleIndex];//apply the new castle index
+            updatedCastlingIndex = newCastleIndex;
+            castlingKeyUpdated = true;
         }
 
         if (movingPiece.isRook() && ((Rook)movingPiece).getHasMoved()){
@@ -303,9 +311,26 @@ public class ChessBot {
             else
                 flag = (fromCol == 7) ?  0b1011 : 0b0111 ; //king side or queen side castling permission withdrawal
 
-            int newCastleIndex = oldCastleIndex & flag;
+            int castleIndex = oldCastleIndex & flag;
             hash ^= castlingKey[oldCastleIndex];//remove old castle key
-            hash ^= castlingKey[newCastleIndex];//apply the new castle key
+            hash ^= castlingKey[castleIndex];//apply the new castle key
+            updatedCastlingIndex = castleIndex;
+            castlingKeyUpdated = true;
+        }
+
+        int currentCastleIndex = castlingKeyUpdated ? updatedCastlingIndex : oldCastleIndex;
+        int finalCastleIndex = currentCastleIndex;
+
+        if (capturedPiece != null && capturedPiece.isRook()){
+            if (toRow == 7 && toCol == 7) finalCastleIndex &= 0b1110;      // White Kingside
+            else if (toRow == 7 && toCol == 0) finalCastleIndex &= 0b1101; // White Queenside
+            else if (toRow == 0 && toCol == 7) finalCastleIndex &= 0b1011; // Black Kingside
+            else if (toRow == 0 && toCol == 0) finalCastleIndex &= 0b0111; // Black Queenside
+        }
+
+        if (finalCastleIndex != currentCastleIndex){
+            hash ^= castlingKey[currentCastleIndex]; // remove pre-capture index
+            hash ^= castlingKey[finalCastleIndex];   // apply post-capture index
         }
 
         if (doublePawnPush){
@@ -319,114 +344,6 @@ public class ChessBot {
         hash ^= sideKey[newSide];//apply the new turn state
 
         return new Position(hash,oldCastleIndex,oldEpCol,oldSide,movingPiece, capturedPiece);
-    }
-
-    public static void rollbackHash(ChessboardLogic chessboardLogic,int encryptedMove, Position position,long hash){
-
-        Piece[][] refBoard = chessboardLogic.getChessboard();
-
-        int[] decryptedMove = decryptMove(encryptedMove);// fromRow, fromCol, toRow, toCol, enPassant, castle,
-        // promotion, doublePawnPush, winningCaptureValue, check
-
-        int fromRow = decryptedMove[0];
-        int fromCol = decryptedMove[1];
-
-        int toRow = decryptedMove[2];
-        int toCol = decryptedMove[3];
-
-        boolean enPassant = decryptedMove[4] == 1 ;
-        boolean castle = decryptedMove[5] == 1;
-        int promoType = decryptedMove[6];
-        boolean promoted = promoType > 0;
-        boolean doublePawnPush = decryptedMove[7] == 1;
-
-        int oldCastlingRights = position.castlingRights;
-        int oldEpCol = position.enPassantCol;
-        int oldTurn = position.side;
-
-        Piece movedPiece = position.movedPiece;
-
-        if (oldEpCol != -1){
-            hash ^= enPassantKey[oldEpCol];
-        }
-
-        if (doublePawnPush){
-            hash ^= enPassantKey[toCol];//remove the new enpassant state if it happened in doMove
-        }
-
-        Piece pieceOnToSquare = movedPiece;
-
-        if (promoted){//check if a promotion happens, if it does, the hash has to be calculated for
-            //the new pieceOnToSquare on the board not for the pawn
-
-            switch (promoType) {
-                case 1 -> pieceOnToSquare = new Knight(pieceOnToSquare.isWhite());
-                case 2 -> pieceOnToSquare = new Bishop(pieceOnToSquare.isWhite());
-                case 3 -> pieceOnToSquare = new Rook(pieceOnToSquare.isWhite());
-                case 4 -> pieceOnToSquare = new Queen(pieceOnToSquare.isWhite());
-                default -> throw new IllegalArgumentException(
-                        "Invalid promotion type: " + promoType
-                );
-            }
-
-        }
-
-        //remove movedPiece from the toSquare
-        int toSquare = toRow* 8 + toCol;
-        hash ^= pieceSquare[pieceIndex(pieceOnToSquare)][toSquare];
-
-        //add movedPiece to the fromSquare
-        int fromSquare = fromRow* 8 + fromCol;
-        hash ^= pieceSquare[pieceIndex(movedPiece)][fromSquare];
-
-        //add the capturedPiece to the toSquare
-        if ( (encryptedMove >> 12 & 1) == 1 ){//capture
-            hash ^= pieceSquare[pieceIndex(position.capturedPiece)][toSquare];
-        }
-
-        //if enpassant remove capturedPawn
-        if (enPassant){
-
-            Piece pawn = position.capturedPiece;
-
-            if (pawn == null || !pawn.isPawn())
-                throw  new IllegalArgumentException("The captured pieceOnToSquare is not a pawn at undoMove() in ChessBot !");
-
-
-            int enPassantSquare = fromRow * 8 + toCol;
-
-            hash ^= pieceSquare[pieceIndex(pawn)][enPassantSquare];//add the enpassanted pawn back
-        }
-
-        //if castle change rook position
-        if (castle){
-
-            int rookOriginalCol = (toCol == 6) ? 7 : 0;
-            int rookTargetCol = (toCol == 6) ? 5 : 3;
-
-            Piece movedRook = refBoard[fromRow][rookTargetCol];
-
-            int rookOriginalSquare = fromRow * 8 + rookOriginalCol;
-            int rookTargetSquare = fromRow * 8 + rookTargetCol;
-
-            if (movedRook != null){
-
-                if (movedRook.isRook()) {
-
-                    hash ^= pieceSquare[pieceIndex(movedRook)][rookTargetSquare];//remove rook from the target square
-                    hash ^= pieceSquare[pieceIndex(movedRook)][rookOriginalSquare];//add rook to the original square
-
-                }
-            }
-        }
-
-        hash ^= castlingKey[castlingIndex(refBoard)];//remove the new castling key
-        hash ^= castlingKey[oldCastlingRights];//add the old castling key
-
-        int newSide = !chessboardLogic.isWhiteToMove() ? 0 : 1;
-        hash ^= sideKey[newSide];//remove the new turn state
-
-        hash ^= sideKey[oldTurn];//add back last turn state
     }
 
     public boolean checkDraw(ChessBot chessBot){

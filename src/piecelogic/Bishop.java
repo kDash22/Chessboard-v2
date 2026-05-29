@@ -86,7 +86,7 @@ public class Bishop extends Piece{
 
         }
 
-        applyCheckFlag(refBoard,validMoveSet);
+        applyCheckFlag(chessboardLogic,validMoveSet);
     }
 
 

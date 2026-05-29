@@ -39,6 +39,16 @@ public class King extends Piece{
                     bit 16 (3 bits total) → promotion piece type
                     bit 19 (5 bits total) → Winning capture
                     bit 24 → check
+                    bit 25 (3 bits total) → piece
+
+                    1 = pawn
+                    2 = knight
+                    3 = Bishop
+                    4 = Rook
+                    5 = Queen
+                    6 = King
+
+                    bit 28 → color (white = 1, black = 0)
 
                 */
 
@@ -131,7 +141,9 @@ public class King extends Piece{
         validMoveSet = new int[validMoveCount];
 
         for (int i = 0; i < validMoveCount; i++){
-            validMoveSet[i] = moves.get(i) | (6 << 25);//move made by King
+            int move = moves.get(i) | (6 << 25);//move made by King
+            move |= isWhite() ? 1 << 28 : 0;//piece colour
+            validMoveSet[i] = move;
         }
     }
 
