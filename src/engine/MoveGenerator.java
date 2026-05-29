@@ -6,6 +6,8 @@ import piecelogic.*;
 import java.util.concurrent.TimeUnit;
 
 import static chessboard.ChessboardLogic.*;
+import static engine.Evaluator.*;
+
 
 public class MoveGenerator {
 
@@ -29,13 +31,15 @@ public class MoveGenerator {
                 p.moveCheck(chessboardLogic, row, col);
                 int[] pValidMoveSet = p.getValidMoveSet();
 
+                int phase = Evaluator.calculatePhase(chessboardLogic);
+
                 for (int i = 0; i < pValidMoveSet.length; i++) {
                     /*
                         [ flags ][   to   ][  from  ]
                         bits12+   bits6-11    bits0-5
                      */
                     moves[moveCount] = pValidMoveSet[i]; // add flags if needed
-                    score[moveCount] = scoreMove(pValidMoveSet[i]);
+                    score[moveCount] = scoreMove(pValidMoveSet[i],phase);
                     moveCount++;
                 }
 
@@ -335,12 +339,26 @@ public class MoveGenerator {
     }
 
     //develop this method to reduce scanned positions
-    private static int scoreMove(int move){
+    private static int scoreMove(int move, int phase){
 
         int[] decryptedMove = decryptMove(move);// fromRow, fromCol, toRow, toCol, enPassant, castle,
         // promotion, doublePawnPush, winningCaptureValue,check
 
-        int score = 0;
+        int piece = (move >> 25) & 7;
+        int index = piece - 1;
+
+        boolean colour = ((move >> 28) & 1) == 1;
+
+        int toSquare = decryptedMove[2] * 8 + decryptedMove[3];
+
+        toSquare ^= colour ? 0 : 56;//56 flips the board vertically
+        // allowing the same piece square table to be used for both colours
+
+        int og = openingPst[index][toSquare];
+        int mg = middlePst[index][toSquare];
+        int eg = endPst[index][toSquare];
+
+        int score = ( og * phase + mg * phase + eg * (24 - phase)) / 24;
 
         score += decryptedMove[8] << 10;// points from 0 to 16, highest being pawn taking a queen
 

@@ -131,7 +131,7 @@ public class King extends Piece{
         validMoveSet = new int[validMoveCount];
 
         for (int i = 0; i < validMoveCount; i++){
-            validMoveSet[i] = moves.get(i);
+            validMoveSet[i] = moves.get(i) | (6 << 25);//move made by King
         }
     }
 

@@ -71,7 +71,7 @@ public class Queen extends Piece{
         validMoveSet = new int[validMoveCount];
 
         for (int i = 0; i < validMoveCount; i++){
-            validMoveSet[i] = moves.get(i);
+            validMoveSet[i] = moves.get(i) | (5 << 25);//move made by Queen
         }
 
         applyCheckFlag(refBoard,validMoveSet);

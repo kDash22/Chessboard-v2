@@ -2,6 +2,7 @@ package chessboard;
 
 import java.util.List;
 
+import engine.ChessBot;
 import engine.Evaluator;
 import piecelogic.*;
 
@@ -18,6 +19,10 @@ public class ChessboardLogic {
     public static final List<Character> COLUMN_LETTERS = List.of('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h');
 
     private boolean immediateAction = false;
+
+    private final ChessBot chessBot = new ChessBot(this);
+
+    private boolean gameOver = false;
 
     public ChessboardLogic(){
         System.out.println("chessboardLogic obj created ! ");
@@ -278,8 +283,8 @@ public class ChessboardLogic {
         //Evaluator.negamaxer(this,4);
         //Evaluator.negamaxPruner(this,4,Integer.MIN_VALUE + 1,Integer.MAX_VALUE - 1);
 
-        if (!isWhiteToMove())//runs only for black for testing purposes
-            Evaluator.orderedNegamaxPruner(this,7,Integer.MIN_VALUE + 1,Integer.MAX_VALUE-1);
+        if (!isWhiteToMove() && !gameOver)//runs only for black for testing purposes
+            chessBot.run(this,6);
     }
 
     //a method to check if a square is attacked by a specified color
@@ -400,6 +405,7 @@ public class ChessboardLogic {
 
             Piece[][] chessboard = getChessboard();
             boolean turn = isWhiteToMove();
+            gameOver = true;
 
             SwingUtilities.invokeLater(() -> {
                 if (isKingInCheck(turn, chessboard)) {
@@ -410,8 +416,15 @@ public class ChessboardLogic {
                     System.out.println("STALEMATE!");
                     JOptionPane.showMessageDialog(chessboardGui, "STALEMATE! It's a draw.");
                 }
+
             });
 
+        }
+
+        if (chessBot.checkDraw(chessBot)){
+            gameOver = true;
+            System.out.println("DRAW!");
+            JOptionPane.showMessageDialog(chessboardGui, "It's a DRAW!");
         }
 
     }
@@ -491,4 +504,5 @@ public class ChessboardLogic {
 
         return new int[]{toRow,toCol};
     }
+
 }

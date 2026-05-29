@@ -10,8 +10,8 @@ import static chessboard.ChessboardLogic.decryptMove;
 
 public class ChessBot {
 
-    static Map<Long, Integer> repetition = new HashMap<>();
-    static long hash ;
+    public static Map<Long, Integer> repetition = new HashMap<>();
+    long hash ;
 
     private static final long[][] pieceSquare = new long[12][64];//[piece][square]
     // 0 - 5 white, 6-12 black
@@ -21,8 +21,19 @@ public class ChessBot {
 
     public void run(ChessboardLogic chessboardLogic, int depth){
 
-        int[] negamax = Evaluator.orderedNegamaxPrune(chessboardLogic,depth,Integer.MIN_VALUE + 1,Integer.MAX_VALUE-1);
-        int move = negamax[1];
+        // 1. Sync hash to account for the opponent's previous move
+        this.hash = buildHash(chessboardLogic);
+
+        Evaluator.orderedNegamaxPruner(chessboardLogic,depth,Integer.MIN_VALUE + 1,Integer.MAX_VALUE-1,this.hash);
+
+        // 2. Sync hash again to account for the bot's newly made move
+        this.hash = buildHash(chessboardLogic);
+    }
+
+    public ChessBot(ChessboardLogic chessboardLogic){
+        fillTheTables();
+        Evaluator.initPst();
+        this.hash = buildHash(chessboardLogic);
 
     }
 
@@ -53,9 +64,10 @@ public class ChessBot {
         }
     }
 
-    static void buildHash(ChessboardLogic chessboardLogic, int previousMove){
+    static long buildHash(ChessboardLogic chessboardLogic){
 
         Piece[][] refBoard = chessboardLogic.getChessboard();
+        long hash = 0;
 
         for (int r = 0; r < 8; r++){
             for (int c = 0; c < 8; c++){
@@ -69,7 +81,12 @@ public class ChessBot {
 
         hash ^= chessboardLogic.isWhiteToMove() ? sideKey[0] : sideKey[1];
         hash ^= castlingKey[castlingIndex(refBoard)];
-        hash ^= enPassantKey[enpassantCol(refBoard)];
+        int epCol = enpassantCol(refBoard);
+
+        if (epCol != -1)
+            hash ^= enPassantKey[epCol];
+
+        return hash;
 
     }
 
@@ -125,14 +142,14 @@ public class ChessBot {
 
             if (kingsideRook != null && kingsideRook.isWhite() && kingsideRook.isRook()
                     && !( (Rook) kingsideRook ).getHasMoved()){
-
-                index = 1;
+                //white kingside
+                index |= 1;
             }
 
             if (queensideRook != null && queensideRook.isWhite() && queensideRook.isRook()
                     && !( (Rook) queensideRook ).getHasMoved()){
-
-                index = (index << 1) | 1;
+                //white queenside
+                index |= 1 << 1;
             }
 
         }
@@ -145,14 +162,14 @@ public class ChessBot {
 
             if (kingsideRook != null && !kingsideRook.isWhite() && kingsideRook.isRook()
                     && !( (Rook) kingsideRook ).getHasMoved()){
-
-                index = (index << 2) | 1;
+                //black kingside
+                index |= 1 << 2;
             }
 
             if (queensideRook != null && !queensideRook.isWhite() && queensideRook.isRook()
                     && !( (Rook) queensideRook ).getHasMoved()){
-
-                index = (index << 3) | 1;
+                //black queenside
+                index |= 1 << 3;
             }
 
         }
@@ -174,7 +191,7 @@ public class ChessBot {
     }
 
     //execute before changing the board
-    public static Position doMove(ChessboardLogic chessboardLogic,int move){
+    public static Position updateHash(ChessboardLogic chessboardLogic, int move, long hash){
 
         Piece[][] refBoard = chessboardLogic.getChessboard();
         boolean prevImmediateActionState = chessboardLogic.getImmediateAction();
@@ -231,9 +248,10 @@ public class ChessBot {
 
         //remove the captured piece from the toSquare
         Piece capturedPiece = null;
-        if ( (move >> 12 & 1) == 1 ){//capture
+        if ( ((move >> 12 & 1) == 1) && !enPassant){//capture
             capturedPiece = refBoard[decryptedMove[2]][decryptedMove[3]];
             hash ^= pieceSquare[pieceIndex(capturedPiece)][toSquare];
+
         }
 
         //if enpassant remove capturedPawn
@@ -303,7 +321,7 @@ public class ChessBot {
         return new Position(hash,oldCastleIndex,oldEpCol,oldSide,movingPiece, capturedPiece);
     }
 
-    public static void undoMove(ChessboardLogic chessboardLogic,int encryptedMove, Position position){
+    public static void rollbackHash(ChessboardLogic chessboardLogic,int encryptedMove, Position position,long hash){
 
         Piece[][] refBoard = chessboardLogic.getChessboard();
 
@@ -396,7 +414,7 @@ public class ChessBot {
                 if (movedRook.isRook()) {
 
                     hash ^= pieceSquare[pieceIndex(movedRook)][rookTargetSquare];//remove rook from the target square
-                    hash ^= pieceSquare[pieceIndex(movedRook)][rookOriginalSquare];//add rook to the original square                }
+                    hash ^= pieceSquare[pieceIndex(movedRook)][rookOriginalSquare];//add rook to the original square
 
                 }
             }
@@ -410,4 +428,13 @@ public class ChessBot {
 
         hash ^= sideKey[oldTurn];//add back last turn state
     }
+
+    public boolean checkDraw(ChessBot chessBot){
+        int count = repetition.getOrDefault(hash,0);
+
+        return count > 3;
+
+    }
+
+
 }

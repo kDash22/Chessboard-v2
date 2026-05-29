@@ -73,7 +73,7 @@ public class Rook extends Piece{
         validMoveSet = new int[validMoveCount];
 
         for (int i = 0; i < validMoveCount; i++){
-            validMoveSet[i] = moves.get(i);
+            validMoveSet[i] = moves.get(i) | (4 << 25);//move made by Rook
         }
 
         applyCheckFlag(refBoard,validMoveSet);

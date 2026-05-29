@@ -17,5 +17,6 @@ public class Position {
         this.side = side;
         this.movedPiece = movedPiece;
         this.capturedPiece = capturedPiece;
+        this.hash = hash;
     }
 }

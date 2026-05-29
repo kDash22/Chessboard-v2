@@ -175,7 +175,7 @@ public class Pawn extends Piece{
         validMoveSet = new int[validMoveCount];
 
         for (int i = 0; i < validMoveCount; i++){
-            validMoveSet[i] = moves.get(i);
+            validMoveSet[i] = moves.get(i) | (1 << 25);//move made by Pawn
         }
 
         applyCheckFlag(refBoard,validMoveSet);
