@@ -432,7 +432,7 @@ public class ChessBot {
     public boolean checkDraw(ChessBot chessBot){
         int count = repetition.getOrDefault(hash,0);
 
-        return count > 3;
+        return count >= 3;
 
     }
 

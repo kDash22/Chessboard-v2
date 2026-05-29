@@ -283,8 +283,11 @@ public class ChessboardLogic {
         //Evaluator.negamaxer(this,4);
         //Evaluator.negamaxPruner(this,4,Integer.MIN_VALUE + 1,Integer.MAX_VALUE - 1);
 
+
         if (!isWhiteToMove() && !gameOver)//runs only for black for testing purposes
-            chessBot.run(this,6);
+            chessBot.run(this,7);
+
+
     }
 
     //a method to check if a square is attacked by a specified color
@@ -420,12 +423,15 @@ public class ChessboardLogic {
             });
 
         }
+        /*
 
         if (chessBot.checkDraw(chessBot)){
             gameOver = true;
             System.out.println("DRAW!");
             JOptionPane.showMessageDialog(chessboardGui, "It's a DRAW!");
         }
+
+         */
 
     }
 

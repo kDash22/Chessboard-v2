@@ -11,7 +11,7 @@ import static engine.Evaluator.*;
 
 public class MoveGenerator {
 
-    public MoveList generateMoves(ChessboardLogic chessboardLogic) {
+    public static MoveList generateMoves(ChessboardLogic chessboardLogic) {
 
         int[] moves = new int[256]; //maximum moves for any given turn is estimated to be about 218
         Piece[][] refBoard = chessboardLogic.getChessboard();
@@ -48,11 +48,52 @@ public class MoveGenerator {
         return new MoveList(moves, score ,moveCount);
     }
 
+    public static MoveList generateCaptures(ChessboardLogic chessboardLogic) {
+
+        int[] moves = new int[256]; //maximum moves for any given turn is estimated to be about 218
+        Piece[][] refBoard = chessboardLogic.getChessboard();
+        int[] score = new int[256];
+
+        int moveCount = 0;
+
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+
+                Piece p = refBoard[row][col];
+
+                if (p == null) continue;
+
+                if (p.isWhite() != chessboardLogic.isWhiteToMove()) continue;
+
+                p.moveCheck(chessboardLogic, row, col);
+                int[] pValidMoveSet = p.getValidMoveSet();
+
+                int phase = Evaluator.calculatePhase(chessboardLogic);
+
+                for (int i = 0; i < pValidMoveSet.length; i++) {
+                    /*
+                        [ flags ][   to   ][  from  ]
+                        bits12+   bits6-11    bits0-5
+                     */
+                    int move = pValidMoveSet[i];
+                    if ((move >> 12 & 1) != 1)
+                        continue;
+
+                    moves[moveCount] = move; // add flags if needed
+                    score[moveCount] = scoreCapture(move);
+                    moveCount++;
+                }
+
+            }
+        }
+        return new MoveList(moves, score ,moveCount);
+    }
+
     public static MoveState doMove(ChessboardLogic chessboardLogic, int encryptedMove) {
 
         Piece[][] refBoard = chessboardLogic.getChessboard();
-        boolean prevImmediateActionState = chessboardLogic.getImmediateAction();
 
+        boolean prevImmediateActionState = chessboardLogic.getImmediateAction();
         chessboardLogic.setImmediateAction(false);//resetting
 
         Pawn previousEPPawn = null;
@@ -350,15 +391,22 @@ public class MoveGenerator {
         boolean colour = ((move >> 28) & 1) == 1;
 
         int toSquare = decryptedMove[2] * 8 + decryptedMove[3];
+        int fromSquare = decryptedMove[0] * 8 + decryptedMove[1];
 
+        fromSquare ^= colour ? 0 : 56;
         toSquare ^= colour ? 0 : 56;//56 flips the board vertically
         // allowing the same piece square table to be used for both colours
 
-        int og = openingPst[index][toSquare];
-        int mg = middlePst[index][toSquare];
-        int eg = endPst[index][toSquare];
+        int mgFrom = middlePst[index][fromSquare];
+        int egFrom = endPst[index][fromSquare];
+        int mgTo = middlePst[index][toSquare];
+        int egTo = endPst[index][toSquare];
 
-        int score = ( og * phase + mg * phase + eg * (24 - phase)) / 24;
+        //to get a better evaluation on the move's importance
+        int mgScore = mgTo - mgFrom;
+        int egScore = egTo - egFrom;
+
+        int score = ( mgScore * phase + egScore * (24 - phase)) / 24;
 
         score += decryptedMove[8] << 10;// points from 0 to 16, highest being pawn taking a queen
 
@@ -372,6 +420,26 @@ public class MoveGenerator {
         score += decryptedMove[9] == 1 ? 100 : 0;// for a check
 
         //add more logic later
+        return score;
+    }
+
+    private static int scoreCapture(int move){
+
+        int[] decryptedMove = decryptMove(move);// fromRow, fromCol, toRow, toCol, enPassant, castle,
+        // promotion, doublePawnPush, winningCaptureValue,check
+        int score = 0;
+
+        score += decryptedMove[8] << 10;// points from 0 to 16, highest being pawn taking a queen
+
+        switch (decryptedMove[6]){
+            case 1 -> score += 8500;//knight
+            case 2 -> score += 6000;//bishop
+            case 3 -> score += 7000;//rook
+            case 4 -> score += 10000;//queen
+        }
+
+        score += decryptedMove[9] == 1 ? 100 : 0;// for a check
+
         return score;
     }
 
