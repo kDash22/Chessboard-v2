@@ -36,5 +36,5 @@ jobs:
           rsync -a --exclude="*.java" src/ out/
 
       - name: Run ChessboardGui
-        # Uses xvfb-run to simulate a display for the GUI application
-        run: xvfb-run java -cp out chessboard.ChessboardGui
+        # Uses xvfb-run to simulate a display and timeout to safely kill the infinite event loop
+        run: timeout 15s xvfb-run java -cp out chessboard.ChessboardGui || [ $? -eq 124 ]
