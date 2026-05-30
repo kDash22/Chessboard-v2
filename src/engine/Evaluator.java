@@ -8,17 +8,20 @@ import java.util.concurrent.TimeUnit;
 import static engine.ChessBot.*;
 
 public class Evaluator {
-    static int pawnValue = 82;
-    static int knightValue = 337;
-    static int bishopValue = 365;
-    static int rookValue = 477;
-    static int queenValue = 1025;
+
+
+    static final int[] PIECE_VALUES = {82,337,365,477,1025};// 0=P, 1=N, 2=B, 3=R, 4=Q
+
+    final static int[] PROMOTION_SCORES = {40000,30000,35000,60000};//0=N, 1=B, 2=R, 3=Q
+
     static final int DRAW_SCORE = 0;
 
     //tables to assign points to piece locations depending on the game stage
     protected static final int[][] middlePst = new int[6][64];
     protected static final int[][] endPst = new int[6][64];
     // 0 -> pawn, 1 -> knight, 2 -> bishop, 3 -> rook, 4 -> queen, 5 -> king
+
+    protected static int[][] killerMoves = new int[64][2];//[ply][moves]
 
     public static void initPst(){
         // Pawn
@@ -186,11 +189,11 @@ public class Evaluator {
                     int index = 0;
 
                     switch (piece.getPieceType()){
-                        case PAWN -> { score += pawnValue ; index = 0; }
-                        case KNIGHT -> { score += knightValue ; index = 1; }
-                        case BISHOP -> { score += bishopValue ; index = 2; }
-                        case ROOK -> { score += rookValue ; index = 3; }
-                        case QUEEN -> { score += queenValue; index = 4; }
+                        case PAWN -> { score += PIECE_VALUES[0]; ; index = 0; }
+                        case KNIGHT -> { score += PIECE_VALUES[1]; ; index = 1; }
+                        case BISHOP -> { score += PIECE_VALUES[2]; ; index = 2; }
+                        case ROOK -> { score += PIECE_VALUES[3]; ; index = 3; }
+                        case QUEEN -> { score += PIECE_VALUES[4]; index = 4; }
                         case KING -> index = 5;
                     }
 
@@ -210,13 +213,13 @@ public class Evaluator {
         return score;
     }
 
-    private static int[] orderedNegamaxPrune(ChessboardLogic chessboardLogic, int depth, int alpha, int beta,long hash){
+    private static int[] orderedNegamaxPrune(ChessboardLogic chessboardLogic, int depth, int alpha, int beta,int ply,long hash){
 
         if (depth == 0) {
-            return quiescenceSearch(chessboardLogic,alpha,beta,hash);
+            return quiescenceSearch(chessboardLogic,alpha,beta,ply,hash);
         }
 
-        MoveList moveList = MoveGenerator.generateMoves(chessboardLogic);
+        MoveList moveList = MoveGenerator.generateMoves(chessboardLogic,ply);
 
         int[] moves = moveList.moves;
         int[] scores = moveList.scores;
@@ -225,7 +228,7 @@ public class Evaluator {
         if (moveCount == 0) {
             if (ChessboardLogic.isKingInCheck(chessboardLogic.isWhiteToMove(),chessboardLogic.getChessboard())){
                 // By subtracting depth, the engine favors slower mates when losing, and faster mates when winning!
-                return new int[]{-100000 - depth, 0, 1};            }
+                return new int[]{-100000 + depth, 0, 1};            }
             return new int[]{0, 0, 1};
         }
 
@@ -254,7 +257,7 @@ public class Evaluator {
             MovePositionState movePositionState = doMoveAndUpdate(chessboardLogic,moves[i],hash);
             long newHash = movePositionState.position.hash;
 
-            if (movePositionState.seenCount >= 2){//check for the 3 time repetition
+            if (movePositionState.seenCount >= 1){//check for the 3 time repetition
 
                 ChessBot.rollbackRepetitionMap(newHash);
                 MoveGenerator.undoMove(chessboardLogic,move,movePositionState.moveState);
@@ -268,7 +271,22 @@ public class Evaluator {
                 }
 
                 alpha = Math.max(alpha, score);
-                if (alpha >= beta) break;
+                if (alpha >= beta) {
+                    boolean isCapture = ((move >> 12) & 1) == 1;
+                    boolean isPromotion = ((move >> 16) & 7) > 0;
+
+                    // Only store QUIET moves as killer moves
+                    if (!isCapture && !isPromotion) {
+
+                        // Shift the primary killer move to the secondary slot
+                        // and store the new move in the primary slot.
+                        if (killerMoves[ply][0] != move) { // Prevent duplicates
+                            killerMoves[ply][1] = killerMoves[ply][0];
+                            killerMoves[ply][0] = move;
+                        }
+                    }
+                    break;
+                }
                 continue;
 
 
@@ -277,7 +295,7 @@ public class Evaluator {
             //in negamax the player's score = - (opponent score)
             //so when recursively calling the negamax function the alpha and the beta values are multiplied by -1 and
             //entered into the function with interchanged positions
-            int[] negamaxPrune = orderedNegamaxPrune(chessboardLogic,depth - 1,-beta,-alpha,newHash);
+            int[] negamaxPrune = orderedNegamaxPrune(chessboardLogic,depth - 1,-beta,-alpha,ply+1,newHash);
 
             int score = -negamaxPrune[0];
 
@@ -295,6 +313,19 @@ public class Evaluator {
             numPositions += negamaxPrune[2];
 
             if (alpha >= beta) {
+                boolean isCapture = ((move >> 12) & 1) == 1;
+                boolean isPromotion = ((move >> 16) & 7) > 0;
+
+                // Only store QUIET moves as killer moves
+                if (!isCapture && !isPromotion) {
+
+                    // Shift the primary killer move to the secondary slot
+                    // and store the new move in the primary slot.
+                    if (killerMoves[ply][0] != move) { // Prevent duplicates
+                        killerMoves[ply][1] = killerMoves[ply][0];
+                        killerMoves[ply][0] = move;
+                    }
+                }
                 break; // PRUNE
             }
         }
@@ -302,18 +333,14 @@ public class Evaluator {
 
     }
 
-    protected static int[] quiescenceSearch(ChessboardLogic chessboardLogic,int alpha, int beta,long hash){
+    protected static int[] quiescenceSearch(ChessboardLogic chessboardLogic,int alpha, int beta,int ply,long hash){
+        boolean isWhiteToMove = chessboardLogic.isWhiteToMove();
 
-        int phase = calculatePhase(chessboardLogic);
+        int phase = calculateOwnPhase(chessboardLogic,isWhiteToMove) + calculateOwnPhase(chessboardLogic,!isWhiteToMove);
         int eval = evaluate(chessboardLogic,phase);
         int bestMove = 0;
 
         boolean inCheck = ChessboardLogic.isKingInCheck(chessboardLogic.isWhiteToMove(), chessboardLogic.getChessboard());
-
-        if (eval >= beta){//opponent will never make that move
-            return new int[]{eval,bestMove,-1};
-        }
-
         int bestScore = -10000;
 
         if (!inCheck) {
@@ -326,15 +353,15 @@ public class Evaluator {
             }
         }
 
-        if (eval > alpha){//best score we can guarantee
-            alpha = eval;
-        }
-
         MoveList moveList;
         if (inCheck) {
-            moveList = MoveGenerator.generateMoves(chessboardLogic);//GENERATE ALL MOVES IF IN CHECK
+            moveList = MoveGenerator.generateMoves(chessboardLogic,ply);//GENERATE ALL MOVES IF IN CHECK
         } else {
-            moveList = MoveGenerator.generateCaptures(chessboardLogic);
+            moveList = MoveGenerator.generateCaptures(chessboardLogic,ply);
+        }
+
+        if (eval > alpha){//best score we can guarantee
+            alpha = eval;
         }
 
         int[] moves = moveList.moves;
@@ -342,6 +369,10 @@ public class Evaluator {
         int moveCount = moveList.size;
 
         for (int i = 0; i < moveCount; i++){
+
+            if (moves[i] == 0) {
+                continue;
+            }
 
             int bestIndex = i;
 
@@ -359,7 +390,7 @@ public class Evaluator {
 
             MovePositionState movePositionState = doMoveAndUpdate(chessboardLogic,moves[i],hash);
 
-            int[] quiescenceSearch = quiescenceSearch(chessboardLogic,-beta,-alpha,movePositionState.position.hash);
+            int[] quiescenceSearch = quiescenceSearch(chessboardLogic,-beta,-alpha,ply+1,movePositionState.position.hash);
             int score = -quiescenceSearch[0];
 
             ChessBot.rollbackRepetitionMap(movePositionState.position.hash);
@@ -383,9 +414,9 @@ public class Evaluator {
         return new int[]{bestScore,bestMove,-1};
     }
 
-    protected static void orderedNegamaxPruner(ChessboardLogic chessboardLogic, int depth, int alpha, int beta,long hash){
+    protected static void orderedNegamaxPruner(ChessboardLogic chessboardLogic, int depth, int alpha, int beta,int ply,long hash){
         long start = System.nanoTime();
-        int[] negamaxPrune = orderedNegamaxPrune(chessboardLogic,depth,alpha,beta,hash);
+        int[] negamaxPrune = orderedNegamaxPrune(chessboardLogic,depth,alpha,beta,ply,hash);
         long end = System.nanoTime();
 
         long elapsedTimeNano = end - start;
@@ -428,10 +459,10 @@ public class Evaluator {
         return new MovePositionState(moveState,position, seenCount);
     }
 
-    public static int calculatePhase(ChessboardLogic chessboardLogic){
+    public static int calculateOwnPhase(ChessboardLogic chessboardLogic,boolean isWhiteToMove){
 
         Piece[][] refBoard = chessboardLogic.getChessboard();
-        int phase = 0;
+        int ownPhase = 0;
 
         for (int r = 0; r < 8; r++){
             for (int c = 0; c < 8; c++){
@@ -439,14 +470,97 @@ public class Evaluator {
                 if (piece == null )
                     continue;
 
+                if (piece.isWhite() != isWhiteToMove)
+                    continue;
+
                 switch (piece.getPieceType()){
-                    case QUEEN -> phase += 4;
-                    case ROOK -> phase += 2;
-                    case BISHOP, KNIGHT -> phase += 1;
+                    case QUEEN -> ownPhase += 4;
+                    case ROOK -> ownPhase += 2;
+                    case BISHOP, KNIGHT -> ownPhase += 1;
                 }
             }
         }
-
-        return phase;
+        return ownPhase;
     }
+
+    //develop this method to reduce scanned positions
+    protected static int scoreMove(int move, int moverPhase, int enemyPhase, int ply, boolean isFromSquareAttacked, boolean isToSquareAttacked, boolean isFromSquareProtected, boolean isToSquareProtected){
+
+        int piece = (move >> 25) & 7;
+        int index = piece - 1;// 0=P, 1=N, 2=B, 3=R, 4=Q, 5=K
+
+        boolean colour = ((move >> 28) & 1) == 1;
+        boolean check = ((move >> 24) & 1) == 1;
+
+        int toSquare = ((move >> 6) & 63) ^ (colour ? 0 : 56);
+        int fromSquare = (move & 63) ^ (colour ? 0 : 56);
+        //56 flips the board vertically
+        // allowing the same piece square table to be used for both colours
+
+        //to get a better evaluation on the move's importance
+        int mgScore = middlePst[index][toSquare] - middlePst[index][fromSquare];
+        int egScore = endPst[index][toSquare] - endPst[index][fromSquare];
+
+        int phase = moverPhase + enemyPhase;
+
+        int score = ( mgScore * phase + egScore * (24 - phase)) / 24;
+
+        score += ((move >> 15) & 1) == 1 ? 3500 : 0;//for a castle
+
+        if (index < 5){
+            int pieceVal = PIECE_VALUES[index];
+            boolean isQueen = index == 4;
+            if (index > 0) { // Non-pawns
+                if (isFromSquareAttacked) score += pieceVal * (isQueen ? 6 : 4);
+                if (isFromSquareProtected) score -= pieceVal * (isQueen ? 1 : 3);
+                if (isToSquareAttacked) score -= pieceVal * (isQueen ? 6 : 4);
+            }
+            if (isToSquareProtected) score += pieceVal * (isQueen ? 3 : 2); // Includes pawns
+        }
+
+        if (check) {
+            int phaseDifference = moverPhase - enemyPhase;
+
+            if (isToSquareProtected && phaseDifference > 0 ) {
+                // Define large advantage
+                boolean largeAdvantage = phaseDifference >= 5;
+
+                int checkingPieceVal = index < 5 ? PIECE_VALUES[index] : 0;
+
+                // Scale scores to forcefully override killer moves and captures
+                score += largeAdvantage ? (30000 + checkingPieceVal * 5 + (phaseDifference * 2000))
+                                        : (15000 + checkingPieceVal * 2 + (phaseDifference * 1000));
+            } else {
+                score += 500; // Standard score for unprotected or disadvantageous checks
+            }
+        }
+
+        boolean isCapture = (move >> 12 & 1) == 1;
+
+        if (isCapture){ // if capture
+            int winningCaptureValue = (move >> 19) & 31;
+
+            if (winningCaptureValue >= 11)//better captures
+
+                score += 10000 + (winningCaptureValue * 1000);
+
+            else //losing trades e.g. Queen takes a pawn
+                score += isToSquareAttacked ? -25000 : 10000 + (winningCaptureValue * 1000);
+
+        }else {
+            // Only apply Promotion OR Killer bonuses to non-captures
+            int promotionIndex = ((move >> 16) & 7) - 1;
+
+            if (promotionIndex >= 0 && promotionIndex < 4) {
+                score += PROMOTION_SCORES[promotionIndex]; // 50,000 to 80,000 tier
+            } else {
+                // Killer moves strictly bound to the 40,000+ tier
+                if (move == killerMoves[ply][0]) score += 26000;
+                else if (move == killerMoves[ply][1]) score += 24000;
+            }
+        }
+        //add more logic later
+        return score;
+    }
+
 }

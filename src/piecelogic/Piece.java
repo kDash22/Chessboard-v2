@@ -94,22 +94,17 @@ public abstract class Piece {
 
         Piece[][] refBoard = chessboardLogic.getChessboard();
 
-        int[] kingPos = ChessboardLogic.getKingPos(!isWhite(),refBoard);
-
         for (int i = 0; i < validMoveSet.length; i++){
 
             int move = validMoveSet[i];
 
             MoveState moveState = doMove(chessboardLogic,move);
 
-            int[] toSquare = ChessboardLogic.getToSquare(move);
-
             if ( isKingInCheck(!isWhite(), refBoard) ){
                 validMoveSet[i] |= 1 << 24; //bit 24 → check
             }
 
             undoMove(chessboardLogic,move,moveState);
-
 
         }
     }

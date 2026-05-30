@@ -24,7 +24,7 @@ public class ChessBot {
         // 1. Sync hash to account for the opponent's previous move
         this.hash = buildHash(chessboardLogic);
 
-        Evaluator.orderedNegamaxPruner(chessboardLogic,depth,Integer.MIN_VALUE + 1,Integer.MAX_VALUE-1,this.hash);
+        Evaluator.orderedNegamaxPruner(chessboardLogic,depth,Integer.MIN_VALUE + 1,Integer.MAX_VALUE-1,0,this.hash);
 
         // 2. Sync hash again to account for the bot's newly made move
         this.hash = buildHash(chessboardLogic);
@@ -191,6 +191,7 @@ public class ChessBot {
     }
 
     //execute before changing the board
+
     public static Position updateHash(ChessboardLogic chessboardLogic, int move, long hash){
 
         Piece[][] refBoard = chessboardLogic.getChessboard();
@@ -222,8 +223,13 @@ public class ChessBot {
 
         Piece movingPiece = refBoard[ fromRow ][ fromCol ];
 
+        if (movingPiece == null) {
+            throw new IllegalStateException("Hash Error: Attempted to move an empty square at row " + fromRow + " col " + fromCol);
+        }
+
         //remove piece from the fromSquare
         int fromSquare = fromRow * 8 + fromCol;
+
         hash ^= pieceSquare[pieceIndex(movingPiece)][fromSquare];
 
         Piece piece = movingPiece;
@@ -250,8 +256,11 @@ public class ChessBot {
         Piece capturedPiece = null;
         if ( ((move >> 12 & 1) == 1) && !enPassant){//capture
             capturedPiece = refBoard[decryptedMove[2]][decryptedMove[3]];
-            hash ^= pieceSquare[pieceIndex(capturedPiece)][toSquare];
-
+            if (capturedPiece != null) {
+                hash ^= pieceSquare[pieceIndex(capturedPiece)][toSquare];
+            } else {
+                System.err.println("Engine Warning: Capture flag is true, but target square is empty!");
+            }
         }
 
         //if enpassant remove capturedPawn
@@ -259,6 +268,10 @@ public class ChessBot {
 
             Piece pawn = refBoard[fromRow][toCol]; //row of victim pawn = from row of the attacker
             capturedPiece = pawn;
+
+            if (pawn == null) {
+                throw new IllegalStateException("Hash Error: En passant executed but victim pawn is missing.");
+            }
 
             if (pawn.getPieceType() != PieceType.PAWN)
                 throw new IllegalArgumentException("Enpassanted piece is not a pawn at doMove() in ChessBot ! ");
@@ -356,10 +369,11 @@ public class ChessBot {
     public static void rollbackRepetitionMap(long newHash){
         int seenCount = repetition.getOrDefault(newHash, 0);
 
-        if (seenCount != 0){
-            repetition.put(newHash, seenCount +1);//update seenCount in map
+        if (seenCount <= 1){
+            repetition.remove(newHash);
+        } else {
+            repetition.put(newHash, seenCount - 1);
         }
-
     }
 
 

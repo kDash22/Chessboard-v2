@@ -66,6 +66,7 @@ public class King extends Piece{
                 } else if (refBoard[toRow][toCol].isWhite() != isWhite() && !refBoard[toRow][toCol].isKing()) {
                     // Enemy piece
                     move |= 1 << 12;
+                    move |= winningCaptureValue(refBoard[toRow][toCol],9) << 19;//winning capture value
                     moves.add(move);
                 }
             }
@@ -145,6 +146,9 @@ public class King extends Piece{
             move |= isWhite() ? 1 << 28 : 0;//piece colour
             validMoveSet[i] = move;
         }
+
+        applyCheckFlag(chessboardLogic,validMoveSet);
+
     }
 
     @Override
