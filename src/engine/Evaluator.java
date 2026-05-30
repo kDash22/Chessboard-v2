@@ -360,7 +360,7 @@ public class Evaluator {
             moveList = MoveGenerator.generateCaptures(chessboardLogic,ply);
         }
 
-        if (eval > alpha){//best score we can guarantee
+        if (!inCheck && eval > alpha){//best score we can guarantee
             alpha = eval;
         }
 
