@@ -79,6 +79,8 @@ public class ChessboardLogic {
         setWhiteToMove(true);
 
         setChessboard(new Piece[8][8]);
+
+        gameOver = false;
         
         // white
         setupBackRank(true, 1);
@@ -100,6 +102,8 @@ public class ChessboardLogic {
         Piece[][] emptyBoard = new Piece[8][8];
         setChessboard(emptyBoard);
 
+        gameOver = false;
+
         //insertPieceToBoard(PieceFactory.createPiece(PieceType.QUEEN, true), this.chessboard, 'd', 1);
         insertPieceToBoard(PieceFactory.createPiece(PieceType.KING, true), this.chessboard, 'e', 1);
 
@@ -113,6 +117,8 @@ public class ChessboardLogic {
 
         Piece[][] emptyBoard = new Piece[8][8];
         setChessboard(emptyBoard);
+
+        gameOver = false;
 
         // --- WHITE PIECES ---
         // Rooks

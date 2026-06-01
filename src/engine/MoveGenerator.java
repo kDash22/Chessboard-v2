@@ -36,11 +36,14 @@ public class MoveGenerator {
                 int moverPhase = Evaluator.calculateOwnPhase(chessboardLogic,isWhiteToMove);
                 int enemyPhase = Evaluator.calculateOwnPhase(chessboardLogic,!isWhiteToMove);
 
+                int[] enemyKingPos = ChessboardLogic.getKingPos(!isWhiteToMove,refBoard);
+                int[] friendlyKingPos = ChessboardLogic.getKingPos(isWhiteToMove,refBoard);
+
+                int enemyKingSquare = enemyKingPos[0] * 8 + enemyKingPos[1];
+                int friendlyKingSquare = friendlyKingPos[0] * 8 + enemyKingPos[1];
+
                 for (int i = 0; i < pValidMoveSet.length; i++) {
                     int move = pValidMoveSet[i];
-
-                    boolean isCapture = ((move >> 12) & 1) == 1;
-                    boolean isPromotion = ((move >> 16) & 7) > 0;//calculates promotions too
 
                     int[] toSquare = ChessboardLogic.getToSquare(move);
                     int fromRow = (move & 0b111111) / 8;
@@ -54,7 +57,7 @@ public class MoveGenerator {
                     boolean isFromSquareAttacked = ChessboardLogic.isSquareAttacked(!isWhiteToMove,refBoard,fromRow,fromCol);
                     boolean isToSquareProtected = ChessboardLogic.isSquareAttacked(isWhiteToMove,refBoard,toSquare[0],toSquare[1]);
                     boolean isFromSquareProtected = ChessboardLogic.isSquareAttacked(isWhiteToMove,refBoard,fromRow,fromCol);;
-                    score[moveCount] = scoreMove(pValidMoveSet[i],moverPhase,enemyPhase,ply,isFromSquareAttacked,isToSquareAttacked,isFromSquareProtected,isToSquareProtected);
+                    score[moveCount] = scoreMove(pValidMoveSet[i],moverPhase,enemyPhase,friendlyKingSquare,enemyKingSquare,ply,isFromSquareAttacked,isToSquareAttacked,isFromSquareProtected,isToSquareProtected);
                     moveCount++;
                 }
 
@@ -88,6 +91,12 @@ public class MoveGenerator {
                 int moverPhase = Evaluator.calculateOwnPhase(chessboardLogic,isWhiteToMove);
                 int enemyPhase = Evaluator.calculateOwnPhase(chessboardLogic,!isWhiteToMove);
 
+                int[] enemyKingPos = ChessboardLogic.getKingPos(!isWhiteToMove,refBoard);
+                int[] friendlyKingPos = ChessboardLogic.getKingPos(isWhiteToMove,refBoard);
+
+                int enemyKingSquare = enemyKingPos[0] * 8 + enemyKingPos[1];
+                int friendlyKingSquare = friendlyKingPos[0] * 8 + enemyKingPos[1];
+
                 for (int i = 0; i < pValidMoveSet.length; i++) {
 
                     int move = pValidMoveSet[i];
@@ -111,7 +120,7 @@ public class MoveGenerator {
                     boolean isFromSquareAttacked = ChessboardLogic.isSquareAttacked(!isWhiteToMove,refBoard,fromRow,fromCol);
                     boolean isToSquareProtected = ChessboardLogic.isSquareAttacked(isWhiteToMove,refBoard,toSquare[0],toSquare[1]);
                     boolean isFromSquareProtected = ChessboardLogic.isSquareAttacked(isWhiteToMove,refBoard,fromRow,fromCol);;
-                    score[moveCount] = scoreMove(pValidMoveSet[i],moverPhase,enemyPhase,ply,isFromSquareAttacked,isToSquareAttacked,isFromSquareProtected,isToSquareProtected);
+                    score[moveCount] = scoreMove(pValidMoveSet[i],moverPhase,enemyPhase,friendlyKingSquare,enemyKingSquare,ply,isFromSquareAttacked,isToSquareAttacked,isFromSquareProtected,isToSquareProtected);
                     moveCount++;
                 }
 

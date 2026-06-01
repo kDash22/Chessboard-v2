@@ -216,7 +216,14 @@ public class Evaluator {
     private static int[] orderedNegamaxPrune(ChessboardLogic chessboardLogic, int depth, int alpha, int beta,int ply,long hash){
 
         if (depth == 0) {
-            return quiescenceSearch(chessboardLogic,alpha,beta,ply,hash);
+
+            int phase = calculateOwnPhase(chessboardLogic, chessboardLogic.isWhiteToMove())
+                    + calculateOwnPhase(chessboardLogic,!chessboardLogic.isWhiteToMove());
+            int staticScore = evaluate(chessboardLogic,phase);
+
+            return new int[]{staticScore, 0, 1};
+            //return quiescenceSearch(chessboardLogic,alpha,beta,ply,hash);
+            //quiescenceSearch slows down the responses too much
         }
 
         MoveList moveList = MoveGenerator.generateMoves(chessboardLogic,ply);
@@ -368,6 +375,10 @@ public class Evaluator {
         int[] scores = moveList.scores;
         int moveCount = moveList.size;
 
+        if (moveCount == 0) {
+            return new int[]{inCheck ? -100000 + ply : bestScore, bestMove, -1};//returns a higher score for a slower checkmate
+        }
+
         for (int i = 0; i < moveCount; i++){
 
             if (moves[i] == 0) {
@@ -484,7 +495,8 @@ public class Evaluator {
     }
 
     //develop this method to reduce scanned positions
-    protected static int scoreMove(int move, int moverPhase, int enemyPhase, int ply, boolean isFromSquareAttacked, boolean isToSquareAttacked, boolean isFromSquareProtected, boolean isToSquareProtected){
+    protected static int scoreMove(int move, int moverPhase, int enemyPhase,int friendlyKingSquare,int enemyKingSquare ,int ply,
+                                   boolean isFromSquareAttacked, boolean isToSquareAttacked, boolean isFromSquareProtected, boolean isToSquareProtected){
 
         int piece = (move >> 25) & 7;
         int index = piece - 1;// 0=P, 1=N, 2=B, 3=R, 4=Q, 5=K
@@ -518,18 +530,30 @@ public class Evaluator {
             if (isToSquareProtected) score += pieceVal * (isQueen ? 3 : 2); // Includes pawns
         }
 
+
+        int phaseDifference = moverPhase - enemyPhase;
+        boolean largeAdvantage = phaseDifference >= 6;
+
         if (check) {
-            int phaseDifference = moverPhase - enemyPhase;
 
             if (isToSquareProtected && phaseDifference > 0 ) {
                 // Define large advantage
-                boolean largeAdvantage = phaseDifference >= 5;
+
+                int distanceToEnemyKing = distanceToKing(enemyKingSquare, toSquare);
+
+                // Max distance on a board is 14.
+                int closingInBonus = (14 - distanceToEnemyKing) ;
 
                 int checkingPieceVal = index < 5 ? PIECE_VALUES[index] : 0;
 
                 // Scale scores to forcefully override killer moves and captures
                 score += largeAdvantage ? (30000 + checkingPieceVal * 5 + (phaseDifference * 2000))
                                         : (15000 + checkingPieceVal * 2 + (phaseDifference * 1000));
+
+                int pieceLethality = index < 5 ? PIECE_VALUES[index] / 100 : 1;
+                int closingInAdvantage = closingInBonus * 100 * pieceLethality;
+                score += closingInAdvantage;
+
             } else {
                 score += 500; // Standard score for unprotected or disadvantageous checks
             }
@@ -559,8 +583,37 @@ public class Evaluator {
                 else if (move == killerMoves[ply][1]) score += 24000;
             }
         }
+
+        boolean isEndgame = (moverPhase + enemyPhase) < 12 || enemyPhase < 5;
+
+        if (isEndgame && largeAdvantage ){
+
+            // Bring the Friendly King Closer to Assist
+            //Some checkmates king to cut off escape squares.
+            int kingToKingDistance = distanceToKing(enemyKingSquare,friendlyKingSquare);
+            int mopUpScore = ((14 - kingToKingDistance) * 10000);
+
+            score += mopUpScore;
+        }
+
+
         //add more logic later
         return score;
+    }
+
+    private static int distanceToKing(int enemyKingSquare, int toSquare) {
+        int toCol = toSquare % 8;
+        int toRow = toSquare / 8;
+
+        int enemyKingRow = enemyKingSquare / 8;
+        int enemyKingCol = enemyKingSquare % 8;
+
+        int rowDiff = Math.abs(toRow - enemyKingRow);
+        int colDiff = Math.abs(toCol - enemyKingCol);
+
+        // Calculate Manhattan Distance (Ranges from 0 to 14)
+        // Lower distance means the piece is closer to the king
+        return rowDiff + colDiff;
     }
 
 }
