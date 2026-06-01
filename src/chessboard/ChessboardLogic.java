@@ -3,7 +3,6 @@ package chessboard;
 import java.util.List;
 
 import engine.ChessBot;
-import engine.Evaluator;
 import piecelogic.*;
 
 import javax.swing.*;
@@ -318,7 +317,7 @@ public class ChessboardLogic {
         return false;
     }
 
-    public static int[] getKingPos(boolean isWhite, Piece[][] chessboard){
+    public static int getKingSquare(boolean isWhite, Piece[][] chessboard){
 
         for (int row = 0; row < 8; row++){
             for (int col = 0; col < 8; col++){
@@ -326,7 +325,7 @@ public class ChessboardLogic {
                 Piece piece = chessboard[row][col];
 
                 if (piece != null && piece.isKing() && piece.isWhite() == isWhite){
-                    return new int[]{row,col};
+                    return row * 8 + col;
                 }
 
             }
@@ -336,8 +335,8 @@ public class ChessboardLogic {
 
     public static boolean isKingInCheck(boolean isWhite, Piece[][] chessboard){
 
-        int[] kingPos = getKingPos(isWhite, chessboard);
-        return isSquareAttacked(!isWhite, chessboard, kingPos[0], kingPos[1]);
+        int kingSquare = getKingSquare(isWhite, chessboard);// row = sq / 8, col = sq % 8
+        return isSquareAttacked(!isWhite, chessboard, kingSquare / 8,  kingSquare % 8);
     }
 
     private void setupBackRank(boolean isWhite, int rank) {

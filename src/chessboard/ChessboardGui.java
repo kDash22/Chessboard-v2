@@ -13,8 +13,6 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.*;
 
-import engine.Evaluator;
-import engine.MoveGenerator;
 import piecelogic.*;
 
 public class ChessboardGui extends JPanel {
@@ -346,9 +344,9 @@ public class ChessboardGui extends JPanel {
         Piece[][] refBoard = chessboardLogic.getChessboard();
 
         if (ChessboardLogic.isKingInCheck(whiteToMove, refBoard)){
-            int[] kingPos = ChessboardLogic.getKingPos(whiteToMove, refBoard);
-            int row = kingPos[0];
-            int col = kingPos[1];
+            int kingSquare = ChessboardLogic.getKingSquare(whiteToMove, refBoard);
+            int row = kingSquare / 8;
+            int col = kingSquare % 8;
 
             g2d.setColor(new Color(255, 30, 30, 70));
             g2d.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);

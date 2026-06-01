@@ -243,7 +243,10 @@ public class Evaluator {
         int bestMove = 0;
         int numPositions = 0;
 
+        Piece[][] refBoard = chessboardLogic.getChessboard();
+
         for (int i = 0; i < moveCount; i++){
+
 
             int bestIndex = i;
 
@@ -261,13 +264,16 @@ public class Evaluator {
 
             int move = moves[i];
 
-            MovePositionState movePositionState = doMoveAndUpdate(chessboardLogic,moves[i],hash);
+            MovePositionState movePositionState = doMoveAndUpdate(chessboardLogic,refBoard,moves[i],hash);
             long newHash = movePositionState.position.hash;
+
+            scores[i] += endGameGettingKingsCloseBonus(chessboardLogic,refBoard);//give a bonus, in the endgame
+            // if the kings are getting closer, useful for checkmates
 
             if (movePositionState.seenCount >= 1){//check for the 3 time repetition
 
                 ChessBot.rollbackRepetitionMap(newHash);
-                MoveGenerator.undoMove(chessboardLogic,move,movePositionState.moveState);
+                MoveGenerator.undoMove(chessboardLogic,refBoard,move,movePositionState.moveState);
 
                 int score = DRAW_SCORE;
 
@@ -315,7 +321,7 @@ public class Evaluator {
             alpha = Math.max(alpha,score);
 
             ChessBot.rollbackRepetitionMap(newHash);
-            MoveGenerator.undoMove(chessboardLogic,move,movePositionState.moveState);
+            MoveGenerator.undoMove(chessboardLogic,refBoard,move,movePositionState.moveState);
 
             numPositions += negamaxPrune[2];
 
@@ -379,6 +385,8 @@ public class Evaluator {
             return new int[]{inCheck ? -100000 + ply : bestScore, bestMove, -1};//returns a higher score for a slower checkmate
         }
 
+        Piece[][] refBoard = chessboardLogic.getChessboard();
+
         for (int i = 0; i < moveCount; i++){
 
             if (moves[i] == 0) {
@@ -399,13 +407,13 @@ public class Evaluator {
             swap(moves,i,bestIndex);
             swap(scores,i,bestIndex);
 
-            MovePositionState movePositionState = doMoveAndUpdate(chessboardLogic,moves[i],hash);
+            MovePositionState movePositionState = doMoveAndUpdate(chessboardLogic,refBoard,moves[i],hash);
 
             int[] quiescenceSearch = quiescenceSearch(chessboardLogic,-beta,-alpha,ply+1,movePositionState.position.hash);
             int score = -quiescenceSearch[0];
 
             ChessBot.rollbackRepetitionMap(movePositionState.position.hash);
-            MoveGenerator.undoMove(chessboardLogic,moves[i],movePositionState.moveState);
+            MoveGenerator.undoMove(chessboardLogic,refBoard,moves[i],movePositionState.moveState);
 
             if (score > bestScore){
                 bestScore = score;
@@ -451,7 +459,7 @@ public class Evaluator {
 
         System.out.printf("Best move : %s ( %1c%1d -> %1c%1d )\n",piece,fromFile,fromChessRow,toFile,toChessRow);
 
-        doMoveAndUpdate(chessboardLogic,negamaxPrune[1],hash);
+        doMoveAndUpdate(chessboardLogic, chessboardLogic.getChessboard(), negamaxPrune[1],hash);
     }
 
     public static void swap(int[] moves, int i, int bestIndex ){
@@ -461,9 +469,9 @@ public class Evaluator {
     }
 
     //wrapper method for doing a move in negamax search
-    private static MovePositionState doMoveAndUpdate(ChessboardLogic chessboardLogic, int encryptedMove,long hash){
+    private static MovePositionState doMoveAndUpdate(ChessboardLogic chessboardLogic, Piece[][] refBoard,int encryptedMove,long hash){
         Position position = updateHash(chessboardLogic,encryptedMove,hash);
-        MoveState moveState = MoveGenerator.doMove(chessboardLogic,encryptedMove);
+        MoveState moveState = MoveGenerator.doMove(chessboardLogic,refBoard,encryptedMove);
         int seenCount = repetition.getOrDefault(position.hash, 0);
         repetition.put(position.hash, seenCount +1);//update seenCount in map
 
@@ -541,7 +549,7 @@ public class Evaluator {
 
                 int distanceToEnemyKing = distanceToKing(enemyKingSquare, toSquare);
 
-                // Max distance on a board is 14.
+                // Max Manhattan distance on a board is 14.
                 int closingInBonus = (14 - distanceToEnemyKing) ;
 
                 int checkingPieceVal = index < 5 ? PIECE_VALUES[index] : 0;
@@ -584,19 +592,6 @@ public class Evaluator {
             }
         }
 
-        boolean isEndgame = (moverPhase + enemyPhase) < 12 || enemyPhase < 5;
-
-        if (isEndgame && largeAdvantage ){
-
-            // Bring the Friendly King Closer to Assist
-            //Some checkmates king to cut off escape squares.
-            int kingToKingDistance = distanceToKing(enemyKingSquare,friendlyKingSquare);
-            int mopUpScore = ((14 - kingToKingDistance) * 10000);
-
-            score += mopUpScore;
-        }
-
-
         //add more logic later
         return score;
     }
@@ -614,6 +609,40 @@ public class Evaluator {
         // Calculate Manhattan Distance (Ranges from 0 to 14)
         // Lower distance means the piece is closer to the king
         return rowDiff + colDiff;
+    }
+
+    private static int endGameGettingKingsCloseBonus(ChessboardLogic chessboardLogic, Piece[][] refBoard){
+
+        boolean isWhiteToMove = chessboardLogic.isWhiteToMove();
+
+        int enemyPhase = calculateOwnPhase(chessboardLogic,!isWhiteToMove);
+        int moverPhase = calculateOwnPhase(chessboardLogic,isWhiteToMove);
+        int phase = moverPhase + enemyPhase;
+        int phaseDifference = Math.abs(moverPhase - enemyPhase);
+
+        boolean isEndgame = (phase) < 12 || enemyPhase < 5;
+
+        if (!isEndgame && phaseDifference < 6){//this should only apply to endgame scenarios
+            return 0;
+        }
+
+        int friendlyKingSquare = ChessboardLogic.getKingSquare(isWhiteToMove,refBoard);
+        int enemyKingSquare  = ChessboardLogic.getKingSquare(!isWhiteToMove,refBoard);
+
+        // Force the Enemy King to the Edge
+        // The center of the board is files 3 & 4, rows 3 & 4.
+        int enemyKingCol = enemyKingSquare % 8;
+        int enemyKingRow = enemyKingSquare / 8;
+
+        int enemyKingColDist = Math.max(3 - enemyKingCol, enemyKingCol - 4);
+        int enemyKingRowDist = Math.max(3 - enemyKingRow, enemyKingRow - 4);
+
+        // This ranges from 0 (dead center) to 6 (absolute corner)
+        int enemyKingEdgeDistance = enemyKingColDist + enemyKingRowDist;
+
+        int kingToKingDistance = distanceToKing(enemyKingSquare, friendlyKingSquare);
+
+        return (enemyKingEdgeDistance * 150) + ((14 - kingToKingDistance) * 50);//max Manhattan distance in a chessboard is 14
     }
 
 }

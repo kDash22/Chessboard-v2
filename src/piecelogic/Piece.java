@@ -56,17 +56,18 @@ public abstract class Piece {
 
     public void filterIllegalMoves(ChessboardLogic chessboardLogic, List<Integer> moves){
 
+        Piece[][] refBoard = chessboardLogic.getChessboard();
         for (int i = moves.size() - 1; i >= 0; i--){
 
             int encryptedMove = moves.get(i);
-            MoveState moveState = doMove(chessboardLogic,encryptedMove);
+            MoveState moveState = doMove(chessboardLogic,refBoard,encryptedMove);
 
             if ( ChessboardLogic.isKingInCheck(isWhite(), chessboardLogic.getChessboard()) ){
-                undoMove(chessboardLogic,encryptedMove,moveState);
+                undoMove(chessboardLogic,refBoard,encryptedMove,moveState);
                 moves.remove(i);
                 continue;
             }
-            undoMove(chessboardLogic,encryptedMove,moveState);
+            undoMove(chessboardLogic,refBoard,encryptedMove,moveState);
 
         }
 
@@ -98,13 +99,13 @@ public abstract class Piece {
 
             int move = validMoveSet[i];
 
-            MoveState moveState = doMove(chessboardLogic,move);
+            MoveState moveState = doMove(chessboardLogic,refBoard,move);
 
             if ( isKingInCheck(!isWhite(), refBoard) ){
                 validMoveSet[i] |= 1 << 24; //bit 24 → check
             }
 
-            undoMove(chessboardLogic,move,moveState);
+            undoMove(chessboardLogic,refBoard,move,moveState);
 
         }
     }

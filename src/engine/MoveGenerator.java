@@ -36,11 +36,8 @@ public class MoveGenerator {
                 int moverPhase = Evaluator.calculateOwnPhase(chessboardLogic,isWhiteToMove);
                 int enemyPhase = Evaluator.calculateOwnPhase(chessboardLogic,!isWhiteToMove);
 
-                int[] enemyKingPos = ChessboardLogic.getKingPos(!isWhiteToMove,refBoard);
-                int[] friendlyKingPos = ChessboardLogic.getKingPos(isWhiteToMove,refBoard);
-
-                int enemyKingSquare = enemyKingPos[0] * 8 + enemyKingPos[1];
-                int friendlyKingSquare = friendlyKingPos[0] * 8 + enemyKingPos[1];
+                int enemyKingSquare = ChessboardLogic.getKingSquare(!isWhiteToMove,refBoard);
+                int friendlyKingSquare = ChessboardLogic.getKingSquare(isWhiteToMove,refBoard);
 
                 for (int i = 0; i < pValidMoveSet.length; i++) {
                     int move = pValidMoveSet[i];
@@ -88,14 +85,11 @@ public class MoveGenerator {
                 p.moveCheck(chessboardLogic, row, col);
                 int[] pValidMoveSet = p.getValidMoveSet();
 
+                int enemyKingSquare = ChessboardLogic.getKingSquare(!isWhiteToMove,refBoard);
+                int friendlyKingSquare = ChessboardLogic.getKingSquare(isWhiteToMove,refBoard);
+
                 int moverPhase = Evaluator.calculateOwnPhase(chessboardLogic,isWhiteToMove);
                 int enemyPhase = Evaluator.calculateOwnPhase(chessboardLogic,!isWhiteToMove);
-
-                int[] enemyKingPos = ChessboardLogic.getKingPos(!isWhiteToMove,refBoard);
-                int[] friendlyKingPos = ChessboardLogic.getKingPos(isWhiteToMove,refBoard);
-
-                int enemyKingSquare = enemyKingPos[0] * 8 + enemyKingPos[1];
-                int friendlyKingSquare = friendlyKingPos[0] * 8 + enemyKingPos[1];
 
                 for (int i = 0; i < pValidMoveSet.length; i++) {
 
@@ -129,9 +123,7 @@ public class MoveGenerator {
         return new MoveList(moves, score ,moveCount);
     }
 
-    public static MoveState doMove(ChessboardLogic chessboardLogic, int encryptedMove) {
-
-        Piece[][] refBoard = chessboardLogic.getChessboard();
+    public static MoveState doMove(ChessboardLogic chessboardLogic, Piece[][] refBoard,int encryptedMove) {
 
         boolean prevImmediateActionState = chessboardLogic.getImmediateAction();
         chessboardLogic.setImmediateAction(false);//resetting
@@ -268,9 +260,7 @@ public class MoveGenerator {
 
     }
 
-    public static void undoMove(ChessboardLogic chessboardLogic, int encryptedMove,MoveState moveState) {
-
-        Piece[][] refBoard = chessboardLogic.getChessboard();
+    public static void undoMove(ChessboardLogic chessboardLogic,Piece[][] refBoard ,int encryptedMove,MoveState moveState) {
 
         Piece capturedPiece = moveState.capturedPiece;
 
@@ -377,9 +367,10 @@ public class MoveGenerator {
 
         int numPositions = 0;
 
+        Piece[][] refBoard = chessboardLogic.getChessboard();
         for (int i = 0; i < moveCount; i++) {
 
-            MoveState moveState = doMove(chessboardLogic, moves[i]);
+            MoveState moveState = doMove(chessboardLogic,refBoard,moves[i]);
 
             // flip turn ONLY in recursion
             numPositions += simulateMoves(
@@ -388,7 +379,7 @@ public class MoveGenerator {
                     !whiteToMove
             );
 
-            undoMove(chessboardLogic, moves[i], moveState);
+            undoMove(chessboardLogic,refBoard ,moves[i], moveState);
         }
 
         return numPositions;
