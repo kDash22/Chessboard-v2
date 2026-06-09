@@ -353,13 +353,13 @@ public class ChessBot {
         int oldSide = chessboardLogic.isWhiteToMove() ? 0 : 1;
         hash ^= sideKey[oldSide];//remove last turn state
 
-        int newSide = !chessboardLogic.isWhiteToMove() ? 0 : 1;
-        hash ^= sideKey[newSide];//apply the new turn state
+        hash ^= sideKey[oldSide ^ 1];//apply the new turn state.
+        //xoring oldSide flips it's bit (e.g. 0 -> 1)
 
         return new Position(hash,oldCastleIndex,oldEpCol,oldSide,movingPiece, capturedPiece);
     }
 
-    public boolean checkDraw(ChessBot chessBot){
+    public boolean checkDraw(){
         int count = repetition.getOrDefault(hash,0);
 
         return count >= 3;

@@ -53,7 +53,7 @@ public class MoveGenerator {
                     boolean isToSquareAttacked = ChessboardLogic.isSquareAttacked(!isWhiteToMove,refBoard,toSquare[0],toSquare[1]);
                     boolean isFromSquareAttacked = ChessboardLogic.isSquareAttacked(!isWhiteToMove,refBoard,fromRow,fromCol);
                     boolean isToSquareProtected = ChessboardLogic.isSquareAttacked(isWhiteToMove,refBoard,toSquare[0],toSquare[1]);
-                    boolean isFromSquareProtected = ChessboardLogic.isSquareAttacked(isWhiteToMove,refBoard,fromRow,fromCol);;
+                    boolean isFromSquareProtected = ChessboardLogic.isSquareAttacked(isWhiteToMove,refBoard,fromRow,fromCol);
                     score[moveCount] = scoreMove(pValidMoveSet[i],moverPhase,enemyPhase,friendlyKingSquare,enemyKingSquare,ply,isFromSquareAttacked,isToSquareAttacked,isFromSquareProtected,isToSquareProtected);
                     moveCount++;
                 }
@@ -113,7 +113,7 @@ public class MoveGenerator {
                     boolean isToSquareAttacked = ChessboardLogic.isSquareAttacked(!isWhiteToMove,refBoard,toSquare[0],toSquare[1]);
                     boolean isFromSquareAttacked = ChessboardLogic.isSquareAttacked(!isWhiteToMove,refBoard,fromRow,fromCol);
                     boolean isToSquareProtected = ChessboardLogic.isSquareAttacked(isWhiteToMove,refBoard,toSquare[0],toSquare[1]);
-                    boolean isFromSquareProtected = ChessboardLogic.isSquareAttacked(isWhiteToMove,refBoard,fromRow,fromCol);;
+                    boolean isFromSquareProtected = ChessboardLogic.isSquareAttacked(isWhiteToMove,refBoard,fromRow,fromCol);
                     score[moveCount] = scoreMove(pValidMoveSet[i],moverPhase,enemyPhase,friendlyKingSquare,enemyKingSquare,ply,isFromSquareAttacked,isToSquareAttacked,isFromSquareProtected,isToSquareProtected);
                     moveCount++;
                 }

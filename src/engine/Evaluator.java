@@ -445,7 +445,7 @@ public class Evaluator {
         String colour = chessboardLogic.isWhiteToMove() ? "White" : "Black";
 
         //System.out.printf("For : %s Depth : %2d    Number of Positions : %,15d      Time : %,9dms (%,.2fs)    Evaluation : %,5d\n",colour,depth, negamaxPrune[1],elapsedTimeMilli,inSeconds, negamaxPrune[2]);
-        System.out.printf("For : %s Depth : %2d    Number of Positions : %,15d      Time : %,9dms (%,.2fs)\n",colour,depth, negamaxPrune[1],elapsedTimeMilli,inSeconds);
+        System.out.printf("For : %s Depth : %2d    Number of Positions : %,15d      Time : %,9dms (%,.2fs)\n",colour,depth, negamaxPrune[2],elapsedTimeMilli,inSeconds);
         int[] decryptedMove = ChessboardLogic.decryptMove(negamaxPrune[1]);// fromRow, fromCol, toRow, toCol, enPassant, castle,
         // promotion, doublePawnPush, winningCaptureValue, check
 
