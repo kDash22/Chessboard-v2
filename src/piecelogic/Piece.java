@@ -3,6 +3,7 @@ package piecelogic;
 import chessboard.ChessboardLogic;
 import engine.MoveState;
 
+import static chessboard.ChessboardLogic.isKingInCheck;
 import static engine.MoveGenerator.doMove;
 import static engine.MoveGenerator.undoMove;
 
@@ -55,23 +56,57 @@ public abstract class Piece {
 
     public void filterIllegalMoves(ChessboardLogic chessboardLogic, List<Integer> moves){
 
+        Piece[][] refBoard = chessboardLogic.getChessboard();
         for (int i = moves.size() - 1; i >= 0; i--){
 
             int encryptedMove = moves.get(i);
-            MoveState moveState = doMove(chessboardLogic,encryptedMove);
+            MoveState moveState = doMove(chessboardLogic,refBoard,encryptedMove);
 
-            if ( chessboardLogic.isKingInCheck(isWhite(), chessboardLogic.getChessboard()) ){
-                undoMove(chessboardLogic,encryptedMove,moveState);
+            if ( ChessboardLogic.isKingInCheck(isWhite(), refBoard) ){
+                undoMove(chessboardLogic,refBoard,encryptedMove,moveState);
                 moves.remove(i);
                 continue;
             }
-            undoMove(chessboardLogic,encryptedMove,moveState);
+            undoMove(chessboardLogic,refBoard,encryptedMove,moveState);
 
         }
 
     }
 
+    public int winningCaptureValue(Piece piece, int ownValue){
+
+        int value = 0;
+
+        switch (piece.getPieceType()){
+            case QUEEN -> value = 9;
+            case ROOK -> value = 5;
+            case BISHOP, KNIGHT -> value = 3;
+            case PAWN -> value = 1;
+        }
+
+        return 8+value-ownValue;
+    }
+
     public abstract boolean attacksSquare(Piece[][] refBoard,int pieceRow, int pieceCol, int targetRow, int targetCol);
 
     public abstract void moveCheck(ChessboardLogic chessboardLogic, int fromRow, int fromCol);
+
+    protected void applyCheckFlag(ChessboardLogic chessboardLogic,int[] validMoveSet){
+
+        Piece[][] refBoard = chessboardLogic.getChessboard();
+
+        for (int i = 0; i < validMoveSet.length; i++){
+
+            int move = validMoveSet[i];
+
+            MoveState moveState = doMove(chessboardLogic,refBoard,move);
+
+            if ( isKingInCheck(!isWhite(), refBoard) ){
+                validMoveSet[i] |= 1 << 24; //bit 24 → check
+            }
+
+            undoMove(chessboardLogic,refBoard,move,moveState);
+
+        }
+    }
 }

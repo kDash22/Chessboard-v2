@@ -2,6 +2,7 @@ package chessboard;
 
 import java.util.List;
 
+import engine.ChessBot;
 import piecelogic.*;
 
 import javax.swing.*;
@@ -18,9 +19,15 @@ public class ChessboardLogic {
 
     private boolean immediateAction = false;
 
+    private ChessBot chessBot;
+
+    private boolean gameOver = false;
+
     public ChessboardLogic(){
         System.out.println("chessboardLogic obj created ! ");
         whiteToMove = true;
+        chessBot = new ChessBot(this);
+        ChessBot.repetition.clear();
     }
     //setters
     public void setChessboard(Piece[][] board){
@@ -73,7 +80,11 @@ public class ChessboardLogic {
         setWhiteToMove(true);
 
         setChessboard(new Piece[8][8]);
-        
+
+        gameOver = false;
+
+        chessBot = new ChessBot(this);
+
         // white
         setupBackRank(true, 1);
         setupPawns(true, 2);
@@ -87,23 +98,80 @@ public class ChessboardLogic {
     }
 
     //for testing purposes
-    public void customBoard(ChessboardGui chessboardGui){
+    public void singlePiece(ChessboardGui chessboardGui){
         chessboardGui.setChessboardLogic(this);
         setWhiteToMove(true);
+        chessBot = new ChessBot(this);
 
         Piece[][] emptyBoard = new Piece[8][8];
         setChessboard(emptyBoard);
 
-        insertPieceToBoard(PieceFactory.createPiece(PieceType.KING, false), this.chessboard, 'e', 1);
-        insertPieceToBoard(PieceFactory.createPiece(PieceType.KING, true), this.chessboard, 'e', 3);
-        insertPieceToBoard(PieceFactory.createPiece(PieceType.KNIGHT, false), this.chessboard, 'e', 4);
-        insertPieceToBoard(PieceFactory.createPiece(PieceType.BISHOP, false), this.chessboard, 'e', 5);
-        insertPieceToBoard(PieceFactory.createPiece(PieceType.QUEEN, true), this.chessboard, 'd', 7);
+        gameOver = false;
+
+        //insertPieceToBoard(PieceFactory.createPiece(PieceType.QUEEN, true), this.chessboard, 'd', 1);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.KING, true), this.chessboard, 'e', 1);
+
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.KING, false), this.chessboard, 'f', 8);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.ROOK, false), this.chessboard, 'a', 8);
+
+    }
+    public void customBoard(ChessboardGui chessboardGui){
+        chessboardGui.setChessboardLogic(this);
+        setWhiteToMove(true);
+        chessBot = new ChessBot(this);
+
+        Piece[][] emptyBoard = new Piece[8][8];
+        setChessboard(emptyBoard);
+
+        gameOver = false;
+
+        // --- WHITE PIECES ---
+        // Rooks
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.ROOK, true), this.chessboard, 'a', 1);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.ROOK, true), this.chessboard, 'h', 1);
+        // Knights
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.KNIGHT, true), this.chessboard, 'c', 3);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.KNIGHT, true), this.chessboard, 'e', 5);
+        // Bishops
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.BISHOP, true), this.chessboard, 'd', 2);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.BISHOP, true), this.chessboard, 'e', 2);
+        // Queen
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.QUEEN, true), this.chessboard, 'f', 3);
+        // King
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.KING, true), this.chessboard, 'e', 1);
+        // Pawns
         insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, true), this.chessboard, 'a', 2);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, true), this.chessboard, 'b', 2);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, true), this.chessboard, 'c', 2);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, true), this.chessboard, 'd', 5);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, true), this.chessboard, 'e', 4);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, true), this.chessboard, 'f', 2);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, true), this.chessboard, 'g', 2);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, true), this.chessboard, 'h', 2);
+
+        // --- BLACK PIECES ---
+        // Rooks
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.ROOK, false), this.chessboard, 'a', 8);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.ROOK, false), this.chessboard, 'h', 8);
+        // Knights
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.KNIGHT, false), this.chessboard, 'b', 6);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.KNIGHT, false), this.chessboard, 'f', 6);
+        // Bishops
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.BISHOP, false), this.chessboard, 'a', 6);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.BISHOP, false), this.chessboard, 'g', 7);
+        // Queen
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.QUEEN, false), this.chessboard, 'e', 7);
+        // King
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.KING, false), this.chessboard, 'e', 8);
+        // Pawns
         insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, false), this.chessboard, 'a', 7);
-
-
-
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, false), this.chessboard, 'b', 4);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, false), this.chessboard, 'c', 7);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, false), this.chessboard, 'd', 7);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, false), this.chessboard, 'e', 6);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, false), this.chessboard, 'f', 7);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, false), this.chessboard, 'g', 6);
+        insertPieceToBoard(PieceFactory.createPiece(PieceType.PAWN, false), this.chessboard, 'h', 3);
     }
 
     public static boolean isIndexWithinBounds(int row, int col){
@@ -222,10 +290,21 @@ public class ChessboardLogic {
             }
 
         }
+        //Evaluator.minimaxer(this,3,isWhiteToMove());
+        //Evaluator.negamaxer(this,4);
+        //Evaluator.negamaxPruner(this,4,Integer.MIN_VALUE + 1,Integer.MAX_VALUE - 1);
+
+
+        if (!isWhiteToMove() && !gameOver){//runs only for black for testing purposes
+            chessBot.run(this,6);
+            checkGameOver();
+        }
+
+
     }
 
     //a method to check if a square is attacked by a specified color
-    public boolean isSquareAttacked(boolean attackerIsWhite, Piece[][] refBoard, int row, int col){
+    public static boolean isSquareAttacked(boolean attackerIsWhite, Piece[][] refBoard, int row, int col){
 
         for (int pieceRow = 0; pieceRow < 8; pieceRow++){
             for (int pieceCol = 0; pieceCol < 8; pieceCol++ ){
@@ -244,7 +323,7 @@ public class ChessboardLogic {
         return false;
     }
 
-    public int[] getKingPos(boolean isWhite, Piece[][] chessboard){
+    public static int getKingSquare(boolean isWhite, Piece[][] chessboard){
 
         for (int row = 0; row < 8; row++){
             for (int col = 0; col < 8; col++){
@@ -252,7 +331,7 @@ public class ChessboardLogic {
                 Piece piece = chessboard[row][col];
 
                 if (piece != null && piece.isKing() && piece.isWhite() == isWhite){
-                    return new int[]{row,col};
+                    return row * 8 + col;
                 }
 
             }
@@ -260,10 +339,10 @@ public class ChessboardLogic {
         throw new IllegalStateException("No king found for color : "+ (isWhite ? "white" : "black") );
     }
 
-    public boolean isKingInCheck(boolean isWhite, Piece[][] chessboard){
+    public static boolean isKingInCheck(boolean isWhite, Piece[][] chessboard){
 
-        int[] kingPos = getKingPos(isWhite, chessboard);
-        return isSquareAttacked(!isWhite, chessboard, kingPos[0], kingPos[1]);
+        int kingSquare = getKingSquare(isWhite, chessboard);// row = sq / 8, col = sq % 8
+        return isSquareAttacked(!isWhite, chessboard, kingSquare / 8,  kingSquare % 8);
     }
 
     private void setupBackRank(boolean isWhite, int rank) {
@@ -313,7 +392,7 @@ public class ChessboardLogic {
 
                 if (chessboard[row][col] == null ) continue;
 
-                if (chessboard[row][col].isWhite() != whiteToMove) continue;
+                if (chessboard[row][col].isWhite() != isWhiteToMove()) continue;
 
                 Piece piece = chessboard[row][col];
                 piece.moveCheck(this,row,col);
@@ -342,6 +421,7 @@ public class ChessboardLogic {
 
             Piece[][] chessboard = getChessboard();
             boolean turn = isWhiteToMove();
+            gameOver = true;
 
             SwingUtilities.invokeLater(() -> {
                 if (isKingInCheck(turn, chessboard)) {
@@ -352,9 +432,19 @@ public class ChessboardLogic {
                     System.out.println("STALEMATE!");
                     JOptionPane.showMessageDialog(chessboardGui, "STALEMATE! It's a draw.");
                 }
+
             });
 
         }
+        /*
+
+        if (chessBot.checkDraw(chessBot)){
+            gameOver = true;
+            System.out.println("DRAW!");
+            JOptionPane.showMessageDialog(chessboardGui, "It's a DRAW!");
+        }
+
+         */
 
     }
 
@@ -410,14 +500,20 @@ public class ChessboardLogic {
                     bit  15 → castling
 
                     bit 16 (3 bits total) → promotion piece type
+                    bit 19 (5 bits total) → Winning capture
                 */
 
         int enPassant = (move >> 14) & 1;
         int castle = (move >> 15) & 1;
         int promotion = (move >> 16) & 7;// binary 111
         int doublePawnPush = (move >> 13) & 1;
+        int winningCaptureValue = (move >> 19) & 31; // binary 11111
+        int check = (move >> 24) & 1;
 
-        return new int[]{fromRow, fromCol, toRow ,toCol, enPassant, castle, promotion, doublePawnPush};
+        // fromRow, fromCol, toRow, toCol, enPassant, castle,
+        // promotion, doublePawnPush, winningCaptureValue, check
+
+        return new int[]{fromRow, fromCol, toRow ,toCol, enPassant, castle, promotion, doublePawnPush,winningCaptureValue,check};
     }
 
     public static int[] getToSquare(int move){
@@ -427,4 +523,5 @@ public class ChessboardLogic {
 
         return new int[]{toRow,toCol};
     }
+
 }

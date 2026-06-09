@@ -6,14 +6,19 @@ import piecelogic.*;
 import java.util.concurrent.TimeUnit;
 
 import static chessboard.ChessboardLogic.*;
+import static engine.Evaluator.scoreMove;
+
 
 public class MoveGenerator {
 
-    public MoveList generateMoves(ChessboardLogic chessboardLogic) {
+    public static MoveList generateMoves(ChessboardLogic chessboardLogic,int ply) {
+
         int[] moves = new int[256]; //maximum moves for any given turn is estimated to be about 218
         Piece[][] refBoard = chessboardLogic.getChessboard();
+        int[] score = new int[256];
 
         int moveCount = 0;
+        boolean isWhiteToMove = chessboardLogic.isWhiteToMove();
 
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
@@ -22,29 +27,103 @@ public class MoveGenerator {
 
                 if (p == null) continue;
 
-                if (p.isWhite() != chessboardLogic.isWhiteToMove()) continue;
+                if (p.isWhite() != isWhiteToMove) continue;
 
                 p.moveCheck(chessboardLogic, row, col);
                 int[] pValidMoveSet = p.getValidMoveSet();
 
+                int moverPhase = Evaluator.calculateOwnPhase(chessboardLogic,isWhiteToMove);
+                int enemyPhase = Evaluator.calculateOwnPhase(chessboardLogic,!isWhiteToMove);
+
+                int enemyKingSquare = ChessboardLogic.getKingSquare(!isWhiteToMove,refBoard);
+                int friendlyKingSquare = ChessboardLogic.getKingSquare(isWhiteToMove,refBoard);
+
                 for (int i = 0; i < pValidMoveSet.length; i++) {
+                    int move = pValidMoveSet[i];
+
+                    int[] toSquare = ChessboardLogic.getToSquare(move);
+                    int fromRow = (move & 0b111111) / 8;
+                    int fromCol = (move & 0b111111) % 8;
                     /*
                         [ flags ][   to   ][  from  ]
                         bits12+   bits6-11    bits0-5
                      */
-                    moves[moveCount++] = pValidMoveSet[i]; // add flags if needed
+                    moves[moveCount] = move; // add flags if needed
+                    boolean isToSquareAttacked = ChessboardLogic.isSquareAttacked(!isWhiteToMove,refBoard,toSquare[0],toSquare[1]);
+                    boolean isFromSquareAttacked = ChessboardLogic.isSquareAttacked(!isWhiteToMove,refBoard,fromRow,fromCol);
+                    boolean isToSquareProtected = ChessboardLogic.isSquareAttacked(isWhiteToMove,refBoard,toSquare[0],toSquare[1]);
+                    boolean isFromSquareProtected = ChessboardLogic.isSquareAttacked(isWhiteToMove,refBoard,fromRow,fromCol);
+                    score[moveCount] = scoreMove(pValidMoveSet[i],moverPhase,enemyPhase,friendlyKingSquare,enemyKingSquare,ply,isFromSquareAttacked,isToSquareAttacked,isFromSquareProtected,isToSquareProtected);
+                    moveCount++;
                 }
 
             }
         }
-        return new MoveList(moves, moveCount);
+        return new MoveList(moves, score ,moveCount);
     }
 
-    public static MoveState doMove(ChessboardLogic chessboardLogic, int encryptedMove) {
+    public static MoveList generateCaptures(ChessboardLogic chessboardLogic,int ply) {
 
+        int[] moves = new int[256]; //maximum moves for any given turn is estimated to be about 218
         Piece[][] refBoard = chessboardLogic.getChessboard();
-        boolean prevImmediateActionState = chessboardLogic.getImmediateAction();
+        int[] score = new int[256];
 
+        int moveCount = 0;
+        boolean isWhiteToMove = chessboardLogic.isWhiteToMove();
+
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+
+                Piece p = refBoard[row][col];
+
+                if (p == null) continue;
+
+                if (p.isWhite() != isWhiteToMove) continue;
+
+                p.moveCheck(chessboardLogic, row, col);
+                int[] pValidMoveSet = p.getValidMoveSet();
+
+                int enemyKingSquare = ChessboardLogic.getKingSquare(!isWhiteToMove,refBoard);
+                int friendlyKingSquare = ChessboardLogic.getKingSquare(isWhiteToMove,refBoard);
+
+                int moverPhase = Evaluator.calculateOwnPhase(chessboardLogic,isWhiteToMove);
+                int enemyPhase = Evaluator.calculateOwnPhase(chessboardLogic,!isWhiteToMove);
+
+                for (int i = 0; i < pValidMoveSet.length; i++) {
+
+                    int move = pValidMoveSet[i];
+
+                    boolean isCapture = ((move >> 12) & 1) == 1;
+                    boolean isPromotion = ((move >> 16) & 7) > 0;//calculates promotions too
+
+                    //If it is neither a capture nor a promotion, skip
+                    if (!isCapture && !isPromotion) {
+                        continue;
+                    }
+                    int[] toSquare = ChessboardLogic.getToSquare(move);
+                    int fromRow = (move & 0b111111) / 8;
+                    int fromCol = (move & 0b111111) % 8;
+                    /*
+                        [ flags ][   to   ][  from  ]
+                        bits12+   bits6-11    bits0-5
+                     */
+                    moves[moveCount] = move; // add flags if needed
+                    boolean isToSquareAttacked = ChessboardLogic.isSquareAttacked(!isWhiteToMove,refBoard,toSquare[0],toSquare[1]);
+                    boolean isFromSquareAttacked = ChessboardLogic.isSquareAttacked(!isWhiteToMove,refBoard,fromRow,fromCol);
+                    boolean isToSquareProtected = ChessboardLogic.isSquareAttacked(isWhiteToMove,refBoard,toSquare[0],toSquare[1]);
+                    boolean isFromSquareProtected = ChessboardLogic.isSquareAttacked(isWhiteToMove,refBoard,fromRow,fromCol);
+                    score[moveCount] = scoreMove(pValidMoveSet[i],moverPhase,enemyPhase,friendlyKingSquare,enemyKingSquare,ply,isFromSquareAttacked,isToSquareAttacked,isFromSquareProtected,isToSquareProtected);
+                    moveCount++;
+                }
+
+            }
+        }
+        return new MoveList(moves, score ,moveCount);
+    }
+
+    public static MoveState doMove(ChessboardLogic chessboardLogic, Piece[][] refBoard,int encryptedMove) {
+
+        boolean prevImmediateActionState = chessboardLogic.getImmediateAction();
         chessboardLogic.setImmediateAction(false);//resetting
 
         Pawn previousEPPawn = null;
@@ -58,7 +137,8 @@ public class MoveGenerator {
             }
         }
 
-        int[] move = decryptMove(encryptedMove);// fromRow, fromCol, toRow, toCol, enPassant, castle, promotion, doublePawnPush
+        int[] move = decryptMove(encryptedMove);// fromRow, fromCol, toRow, toCol, enPassant, castle,
+        // promotion, doublePawnPush, winningCaptureValue, check
 
         int fromRow = move[0];
         int fromCol = move[1];
@@ -76,6 +156,7 @@ public class MoveGenerator {
         Piece capturedPiece = refBoard[toRow][toCol];
 
         boolean movingPieceHadMoved = false;
+
         if (movingPiece.isRook()) movingPieceHadMoved = ((Rook) movingPiece).getHasMoved();
         if (movingPiece.isKing()) movingPieceHadMoved = ((King) movingPiece).getHasMoved();
 
@@ -177,13 +258,12 @@ public class MoveGenerator {
 
     }
 
-    public static void undoMove(ChessboardLogic chessboardLogic, int encryptedMove,MoveState moveState) {
-
-        Piece[][] refBoard = chessboardLogic.getChessboard();
+    public static void undoMove(ChessboardLogic chessboardLogic,Piece[][] refBoard ,int encryptedMove,MoveState moveState) {
 
         Piece capturedPiece = moveState.capturedPiece;
 
-        int[] move = decryptMove(encryptedMove);// fromRow, fromCol, toRow, toCol, enPassant, castle, promotion, doublePawnPush
+        int[] move = decryptMove(encryptedMove);// fromRow, fromCol, toRow, toCol, enPassant, castle,
+        // promotion, doublePawnPush, winningCaptureValue, check
 
         int fromRow = move[0];
         int fromCol = move[1];
@@ -279,15 +359,16 @@ public class MoveGenerator {
 
         if (depth == 0) return 1;
 
-        MoveList moveList = generateMoves(chessboardLogic);
+        MoveList moveList = generateMoves(chessboardLogic,0);//ply doesn't matter when checking all possibilities
         int[] moves = moveList.moves;
         int moveCount = moveList.size;
 
         int numPositions = 0;
 
+        Piece[][] refBoard = chessboardLogic.getChessboard();
         for (int i = 0; i < moveCount; i++) {
 
-            MoveState moveState = doMove(chessboardLogic, moves[i]);
+            MoveState moveState = doMove(chessboardLogic,refBoard,moves[i]);
 
             // flip turn ONLY in recursion
             numPositions += simulateMoves(
@@ -296,7 +377,7 @@ public class MoveGenerator {
                     !whiteToMove
             );
 
-            undoMove(chessboardLogic, moves[i], moveState);
+            undoMove(chessboardLogic,refBoard ,moves[i], moveState);
         }
 
         return numPositions;
@@ -320,13 +401,12 @@ public class MoveGenerator {
             long elapsedTimeMilli = TimeUnit.NANOSECONDS.toMillis(elapsedTimeNano);
 
 
-            System.out.println("Depth : "+i+"   Number of positions : "+numPositions+"  Time(ms) : "+elapsedTimeMilli);
-
+            //System.out.println("Depth : "+i+"   Number of positions : "+numPositions+"  Time(ms) : "+elapsedTimeMilli);
+            System.out.printf("\nDepth : %2d    Number of Positions : %,15d      Time(ms) : %,9d",i,numPositions,elapsedTimeMilli);
 
         }
 
     }
-
 
 
 }

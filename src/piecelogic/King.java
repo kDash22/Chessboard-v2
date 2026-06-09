@@ -37,6 +37,19 @@ public class King extends Piece{
                     bit  15 → castling
 
                     bit 16 (3 bits total) → promotion piece type
+                    bit 19 (5 bits total) → Winning capture
+                    bit 24 → check
+                    bit 25 (3 bits total) → piece
+
+                    1 = pawn
+                    2 = knight
+                    3 = Bishop
+                    4 = Rook
+                    5 = Queen
+                    6 = King
+
+                    bit 28 → color (white = 1, black = 0)
+
                 */
 
             int toRow = fromRow + direction[0];
@@ -53,6 +66,7 @@ public class King extends Piece{
                 } else if (refBoard[toRow][toCol].isWhite() != isWhite() && !refBoard[toRow][toCol].isKing()) {
                     // Enemy piece
                     move |= 1 << 12;
+                    move |= winningCaptureValue(refBoard[toRow][toCol],9) << 19;//winning capture value
                     moves.add(move);
                 }
             }
@@ -93,14 +107,14 @@ public class King extends Piece{
             if (remove) moves.remove(i);
         }
         // --- Castling Logic ---
-        if (!getHasMoved()  && !chessboardLogic.isKingInCheck(isWhite(),refBoard)  ) {
+        if (!getHasMoved()  && !ChessboardLogic.isKingInCheck(isWhite(),refBoard)  ) {
             // King Side Castling
             if (refBoard[fromRow][7] != null && refBoard[fromRow][7].getPieceType() == PieceType.ROOK
                     && refBoard[fromRow][7].isWhite() == isWhite() &&!((Rook) refBoard[fromRow][7]).getHasMoved()) {
 
                 if ( (refBoard[fromRow][5] == null && refBoard[fromRow  ][6] == null)
-                        && !chessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,5)
-                        && !chessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,6))  {
+                        && !ChessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,5)
+                        && !ChessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,6))  {
 
                     int move = fromRow * 8 + fromCol;
                     move |= (fromRow * 8 + 6) << 6;
@@ -113,8 +127,8 @@ public class King extends Piece{
                     && refBoard[fromRow][0].isWhite() == isWhite() && !((Rook) refBoard[fromRow][0]).getHasMoved()) {
                 
                 if (refBoard[fromRow][1] == null && refBoard[fromRow][2] == null && refBoard[fromRow][3] == null
-                        && !chessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,2)
-                        && !chessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,3)) {
+                        && !ChessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,2)
+                        && !ChessboardLogic.isSquareAttacked(!isWhite(),refBoard,fromRow,3)) {
                     int move = fromRow * 8 + fromCol;
                     move |= (fromRow * 8 + 2) << 6;
                     move |= 1 << 15; //bit  15    → castling
@@ -128,12 +142,17 @@ public class King extends Piece{
         validMoveSet = new int[validMoveCount];
 
         for (int i = 0; i < validMoveCount; i++){
-            validMoveSet[i] = moves.get(i);
+            int move = moves.get(i) | (6 << 25);//move made by King
+            move |= isWhite() ? 1 << 28 : 0;//piece colour
+            validMoveSet[i] = move;
         }
+
+        applyCheckFlag(chessboardLogic,validMoveSet);
+
     }
 
     @Override
-    public boolean attacksSquare(Piece[][] refBoard,int pieceRow, int pieceCol, int targetRow, int targetCol) {
+    public boolean attacksSquare(Piece[][] refBoard, int pieceRow, int pieceCol, int targetRow, int targetCol) {
         return (Math.abs(targetRow - pieceRow) <= 1 && Math.abs(targetCol-pieceCol) <= 1) && !(Math.abs(targetRow - pieceRow) == 0 && Math.abs(targetCol-pieceCol) == 0);
     }
 

@@ -13,7 +13,6 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.*;
 
-import engine.MoveGenerator;
 import piecelogic.*;
 
 public class ChessboardGui extends JPanel {
@@ -38,6 +37,7 @@ public class ChessboardGui extends JPanel {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e){
+
                 selectPiece(e);
 
             }
@@ -343,10 +343,10 @@ public class ChessboardGui extends JPanel {
         boolean whiteToMove = chessboardLogic.isWhiteToMove();
         Piece[][] refBoard = chessboardLogic.getChessboard();
 
-        if (chessboardLogic.isKingInCheck(whiteToMove, refBoard)){
-            int[] kingPos = chessboardLogic.getKingPos(whiteToMove, refBoard);
-            int row = kingPos[0];
-            int col = kingPos[1];
+        if (ChessboardLogic.isKingInCheck(whiteToMove, refBoard)){
+            int kingSquare = ChessboardLogic.getKingSquare(whiteToMove, refBoard);
+            int row = kingSquare / 8;
+            int col = kingSquare % 8;
 
             g2d.setColor(new Color(255, 30, 30, 70));
             g2d.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
@@ -357,16 +357,35 @@ public class ChessboardGui extends JPanel {
 
         ChessboardLogic chessboardLogic = new ChessboardLogic();
 
-
+        /*
         javax.swing.SwingUtilities.invokeLater(() -> {
             ChessboardGui chessboardGui = new ChessboardGui();
             chessboardLogic.setGui(chessboardGui);
-            chessboardLogic.newGame(chessboardGui);
-            //chessboardLogic.customBoard(chessboardGui);
+            //chessboardLogic.newGame(chessboardGui);
+            chessboardLogic.customBoard(chessboardGui);
             chessboardLogic.getChessboardGui().showGame();
-            MoveGenerator.runPerftUpToDepth(chessboardLogic,5);
+            //MoveGenerator.runPerftUpToDepth(chessboardLogic,5);
+            System.out.println(Evaluator.countMaterial(chessboardLogic.chessboard, true));
+            System.out.println("Evaluation of the board for white : "+ Evaluator.evaluate(chessboardLogic));
         });
 
+         */
+        ChessboardGui chessboardGui = new ChessboardGui();
+        chessboardLogic.setGui(chessboardGui);
+        chessboardLogic.newGame(chessboardGui);
+        //chessboardLogic.customBoard(chessboardGui);
+        //chessboardLogic.singlePiece(chessboardGui);
+        chessboardLogic.getChessboardGui().showGame();
+        //MoveGenerator.runPerftUpToDepth(chessboardLogic,4);
+        System.out.println();
+        System.out.println("NegaMax with Pruning search : ");
+        System.out.println("With pre calculated scores array (v2) ");
+        System.out.println("(with check, promotion, and updated winning capture)\n");
+
+        //Evaluator.minimaxer(chessboardLogic,3,chessboardLogic.isWhiteToMove());
+        //Evaluator.negamaxer(chessboardLogic,4);
+        //System.out.println(Evaluator.countMaterial(chessboardLogic.chessboard, true));
+        //System.out.println("Evaluation of the board for white : "+ Evaluator.evaluate(chessboardLogic));
 
         /*
         for (int row = 0; row < 8; row++){

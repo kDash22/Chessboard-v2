@@ -46,6 +46,19 @@ public class Pawn extends Piece{
                     bit  15 → castling
 
                     bit 16 (3 bits total) → promotion piece type
+                    bit 19 (5 bits total) → Winning capture
+                    bit 24 → check
+                    bit 25 (3 bits total) → piece
+
+                    1 = pawn
+                    2 = knight
+                    3 = Bishop
+                    4 = Rook
+                    5 = Queen
+                    6 = King
+
+                    bit 28 → color (white = 1, black = 0)
+
                 */
 
         //moving logic
@@ -89,6 +102,7 @@ public class Pawn extends Piece{
             {
                 int move = fromRow * 8 + fromCol;
                 move |= (toRow * 8 + toCol) << 6;
+                move |= winningCaptureValue(refBoard[toRow][toCol],PIECE_VALUE) << 19;//winning capture value
                 move |= 1 << 12; //bit 12 → capture
 
                 if (toRow == endRow) {
@@ -97,6 +111,7 @@ public class Pawn extends Piece{
                         promotion |= (toRow * 8 + toCol) << 6;
                         promotion |= 1 << 12; //bit 12 → capture
                         promotion |= i << 16; //bits 16 (2 bits total) → promotion piece type
+                        promotion |= winningCaptureValue(refBoard[toRow][toCol],PIECE_VALUE) << 19;//winning capture value
                         moves.add(promotion);
                     }
                 } else {
@@ -115,6 +130,7 @@ public class Pawn extends Piece{
             {
                 int move = fromRow * 8 + fromCol;
                 move |= (toRow * 8 + toCol) << 6;
+                move |= winningCaptureValue(refBoard[toRow][toCol],PIECE_VALUE) << 19;//winning capture value
                 move |= 1 << 12; //bit 12 → capture
 
                 if (toRow == endRow) {
@@ -122,6 +138,7 @@ public class Pawn extends Piece{
                         int promotion = fromRow * 8 + fromCol;
                         promotion |= (toRow * 8 + toCol) << 6;
                         promotion |= 1 << 12; //bit 12 → capture
+                        promotion |= winningCaptureValue(refBoard[toRow][toCol],PIECE_VALUE) << 19;//winning capture value
                         promotion |= i << 16; //bits 16 (3 bits total) → promotion piece type
                         moves.add(promotion);
                     }
@@ -141,6 +158,8 @@ public class Pawn extends Piece{
                 && ((Pawn) pieceToTheLeft).getEnPassantVulnerable() && isWhite() != pieceToTheLeft.isWhite()){
             int dir = isWhite() ? -1 : 1;
             int move = fromRow * 8 + fromCol;
+            move |= 1 << 12; //bit 12 → capture
+            move |= winningCaptureValue(pieceToTheLeft,PIECE_VALUE) << 19;//winning capture value
             move |= ((fromRow+dir) * 8 + (fromCol-1)) << 6;
             move |= 1 << 14; //bit 14 → en passant
             moves.add(move);
@@ -153,6 +172,8 @@ public class Pawn extends Piece{
                 && ((Pawn) pieceToTheRight).getEnPassantVulnerable() && isWhite() != pieceToTheRight.isWhite()){
             int dir = isWhite() ? -1 : 1;
             int move = fromRow * 8 + fromCol;
+            move |= 1 << 12; //bit 12 → capture
+            move |= winningCaptureValue(pieceToTheRight,PIECE_VALUE) << 19;//winning capture value
             move |= ((fromRow+dir) * 8 + (fromCol+1)) << 6;
             move |= 1 << 14; //bit 14 → en passant
             moves.add(move);
@@ -165,8 +186,13 @@ public class Pawn extends Piece{
         validMoveSet = new int[validMoveCount];
 
         for (int i = 0; i < validMoveCount; i++){
-            validMoveSet[i] = moves.get(i);
+            int move = moves.get(i) | (1 << 25);//move made by pawn
+            move |= isWhite() ? 1 << 28 : 0;//piece colour
+            validMoveSet[i] = move;
         }
+
+        applyCheckFlag(chessboardLogic,validMoveSet);
+
     }
 
     @Override
