@@ -62,7 +62,7 @@ public abstract class Piece {
             int encryptedMove = moves.get(i);
             MoveState moveState = doMove(chessboardLogic,refBoard,encryptedMove);
 
-            if ( ChessboardLogic.isKingInCheck(isWhite(), chessboardLogic.getChessboard()) ){
+            if ( ChessboardLogic.isKingInCheck(isWhite(), refBoard) ){
                 undoMove(chessboardLogic,refBoard,encryptedMove,moveState);
                 moves.remove(i);
                 continue;

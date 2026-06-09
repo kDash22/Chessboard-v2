@@ -18,11 +18,10 @@ public class MoveGenerator {
         int[] score = new int[256];
 
         int moveCount = 0;
+        boolean isWhiteToMove = chessboardLogic.isWhiteToMove();
 
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
-
-                boolean isWhiteToMove = chessboardLogic.isWhiteToMove();
 
                 Piece p = refBoard[row][col];
 
@@ -70,11 +69,10 @@ public class MoveGenerator {
         int[] score = new int[256];
 
         int moveCount = 0;
+        boolean isWhiteToMove = chessboardLogic.isWhiteToMove();
 
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
-
-                boolean isWhiteToMove = chessboardLogic.isWhiteToMove();
 
                 Piece p = refBoard[row][col];
 

@@ -19,7 +19,7 @@ public class ChessboardLogic {
 
     private boolean immediateAction = false;
 
-    private final ChessBot chessBot;
+    private ChessBot chessBot;
 
     private boolean gameOver = false;
 
@@ -27,6 +27,7 @@ public class ChessboardLogic {
         System.out.println("chessboardLogic obj created ! ");
         whiteToMove = true;
         chessBot = new ChessBot(this);
+        ChessBot.repetition.clear();
     }
     //setters
     public void setChessboard(Piece[][] board){
@@ -81,7 +82,9 @@ public class ChessboardLogic {
         setChessboard(new Piece[8][8]);
 
         gameOver = false;
-        
+
+        chessBot = new ChessBot(this);
+
         // white
         setupBackRank(true, 1);
         setupPawns(true, 2);
@@ -98,6 +101,7 @@ public class ChessboardLogic {
     public void singlePiece(ChessboardGui chessboardGui){
         chessboardGui.setChessboardLogic(this);
         setWhiteToMove(true);
+        chessBot = new ChessBot(this);
 
         Piece[][] emptyBoard = new Piece[8][8];
         setChessboard(emptyBoard);
@@ -114,6 +118,7 @@ public class ChessboardLogic {
     public void customBoard(ChessboardGui chessboardGui){
         chessboardGui.setChessboardLogic(this);
         setWhiteToMove(true);
+        chessBot = new ChessBot(this);
 
         Piece[][] emptyBoard = new Piece[8][8];
         setChessboard(emptyBoard);
