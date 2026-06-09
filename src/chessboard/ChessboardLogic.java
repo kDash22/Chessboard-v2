@@ -19,13 +19,14 @@ public class ChessboardLogic {
 
     private boolean immediateAction = false;
 
-    private final ChessBot chessBot = new ChessBot(this);
+    private final ChessBot chessBot;
 
     private boolean gameOver = false;
 
     public ChessboardLogic(){
         System.out.println("chessboardLogic obj created ! ");
         whiteToMove = true;
+        chessBot = new ChessBot(this);
     }
     //setters
     public void setChessboard(Piece[][] board){
